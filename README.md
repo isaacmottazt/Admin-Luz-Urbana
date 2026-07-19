@@ -11,7 +11,7 @@ Painel de gerenciamento completo para o Estúdio Luz Urbana, permitindo controla
 ### Login
 - Acesse `login.html`
 - Faça login com suas credenciais de e-mail e senha (autenticado via Supabase)
-- Serão redirecionado automaticamente para `painel.html` se a sessão for válida
+- Serão redirecionado automaticamente para `index.html` se a sessão for válida
 
 ---
 
@@ -63,7 +63,7 @@ Clique no título de cada seção para expandir/recolher.
 
 ---
 
-### 2️⃣ **Gerenciador de Galeria** (`admin.html`)
+### 2️⃣ **Gerenciador de Galeria** (`index.html`)
 
 Upload e gerenciamento de fotos do portfólio do estúdio.
 
@@ -106,85 +106,6 @@ EM ANDAMENTO 🔵      ou      FINALIZADO 🟢
 
 ---
 
-## 🗄️ **Backend & Banco de Dados**
-
-### Supabase
-- **Projeto ID:** `ublmmwatrqvthbcmnrps`
-- **URL:** `https://tbwmsgztpyyratambgqs.supabase.co`
-
-### Tabelas Usadas
-
-**`agendamentos`** — Ensaios agendados
-- `id` (PK, auto)
-- `nome` (text)
-- `email` (text)
-- `telefone` (text)
-- `ensaio` (text) — tipo de ensaio
-- `data` (date)
-- `horario` (time)
-- `mensagem` (text)
-- `status` (text) — `pendente` | `andamento` | `finalizado` | `concluido`
-
-**`galeria`** — Fotos publicadas
-- `id` (PK, auto)
-- `imagem_url` (text) — URL pública do Storage
-
-### Storage
-**Bucket:** `fotos`
-- Armazena imagens do portfólio
-- Acesso público (URLs retornadas são públicas)
-
----
-
-## 🔐 **Autenticação & Segurança**
-
-- Autenticação via **Supabase Auth** (email + senha)
-- **RLS (Row Level Security)** ativa nas tabelas
-- Sessão verificada no carregamento de cada página
-- Se não autenticado, redireciona automaticamente para `login.html`
-
----
-
-## 📱 **Responsividade**
-
-O painel é totalmente responsivo e funciona bem em:
-- Desktop (recomendado)
-- Tablet
-- Celular (via Acode ou navegador)
-
----
-
-## 🎨 **Design & Tema**
-
-- **Cores:** Ouro (primária), azul, laranja, verde (status)
-- **Tipografia:** Poppins (Google Fonts)
-- **Efeito vidro:** Cards com backdrop blur e transparência
-- **Animações:** Suaves (0.2s–0.25s)
-
----
-
-## 🐛 **Troubleshooting**
-
-### Agendamentos não aparecem
-- Verifique conexão com Supabase
-- Confirme que a tabela `agendamentos` tem registros
-- Cheque RLS policies (devem permitir SELECT)
-
-### Fotos não fazem upload
-- Verificar se o bucket `fotos` existe e é público
-- Confirmar permissões de Storage no Supabase
-- Tentar em outro navegador ou limpar cache
-
-### Login não funciona
-- Confirmação de email ativa? Verifique no Supabase Auth settings
-- Usuário criado manualmente? Vai precisar de um invite link ou ativar sem confirmação
-
-### Modal de upload não aparece
-- Verificar console do navegador (F12) para erros JS
-- Tentar recarregar a página
-
----
-
 ## 📝 **Arquivos Principais**
 
 ```
@@ -207,19 +128,10 @@ LB-admin/
 
 ## 🚢 **Deploy**
 
-Hospedado em **Cloudflare Workers** com auto-deploy via GitHub.
+Hospedado em ** Vercel** com auto-deploy via GitHub.
 
 - Qualquer push na branch `main` atualiza o site automaticamente
 - Verifique em `fenda.isaacmota1007.workers.dev`
-
----
-
-## 📞 **Suporte**
-
-Para problemas ou melhorias:
-- Verifique o console do navegador (DevTools)
-- Consulte logs do Supabase
-- Recarregue a página (Ctrl+Shift+R para limpar cache)
 
 ---
 
