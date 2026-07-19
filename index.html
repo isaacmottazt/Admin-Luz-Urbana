@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+Admin | Estúdio Luz Urbana
+</title>
+
+<link
+rel="stylesheet"
+href="painel.css">
+
+<link
+rel="stylesheet"
+href="admin.css">
+
+<link
+href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+<!-- FAIXA LATERAL -->
+<aside class="faixa">
+    <div class="faixa-logo"><img src="img/logo.png" alt="Logo"></div>
+    <div class="faixa-linha"></div>
+    <a class="faixa-btn" href="painel.html" title="Painel">📊</a>
+    <button class="faixa-btn" onclick="abrirModalUpload()" title="Enviar fotos">📤</button>
+    <div class="faixa-espaco"></div>
+    <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair">⎋</button>
+</aside>
+
+<div class="conteudo">
+
+<!-- CABEÇALHO -->
+<header class="cabecalho">
+    <div class="cabecalho-titulo">
+        <h1>Painel Admin</h1>
+        <p>Gerencie as fotos da galeria do Estúdio Luz Urbana</p>
+    </div>
+</header>
+
+<!-- UPLOAD (MODAL) -->
+<div class="modal-overlay" id="modalUpload" onclick="fecharModalUploadFora(event)">
+    <section class="painel-vidro upload-box modal-caixa">
+        <div class="painel-vidro-topo">
+            <h2>Enviar novas fotos</h2>
+            <button class="modal-fechar" onclick="fecharModalUpload()" title="Fechar">✕</button>
+        </div>
+
+        <div class="upload-corpo">
+
+            <label class="upload-campo" for="imagem">
+                <input
+                type="file"
+                id="imagem"
+                multiple
+                accept="image/*">
+            </label>
+
+            <button
+            class="btn-enviar"
+            onclick="enviarImagem()">
+            📤 Enviar Imagens
+            </button>
+
+            <p id="status" class="upload-status"></p>
+
+        </div>
+    </section>
+</div>
+
+<!-- GALERIA -->
+<section class="painel-vidro galeria-secao">
+    <div class="painel-vidro-topo">
+        <h2>Galeria</h2>
+        <span class="tag-suave">Fotos publicadas</span>
+    </div>
+
+    <div
+    id="galeria-admin"
+    class="galeria-admin">
+    </div>
+</section>
+
+</div><!-- /.conteudo -->
+
+</div><!-- /.app-shell -->
+
+<!-- SUPABASE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- JS -->
+
+<script src="admin.js"></script>
+
+</body>
+</html>
