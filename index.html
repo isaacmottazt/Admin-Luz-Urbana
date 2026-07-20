@@ -97,6 +97,25 @@ rel="stylesheet">
 
 </div><!-- /.app-shell -->
 
+<!-- LIGHTBOX (tela cheia) -->
+<div class="lightbox" id="lightbox" onclick="fecharLightboxFora(event)">
+    <button class="lightbox-fechar" onclick="fecharLightbox()" title="Fechar">✕</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="Foto ampliada">
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
+<div class="modal-overlay" id="modalExcluir" onclick="fecharModalExcluirFora(event)">
+    <section class="painel-vidro modal-caixa modal-excluir">
+        <div class="modal-excluir-icone">!</div>
+        <h2>Excluir esta foto?</h2>
+        <p>Essa ação não pode ser desfeita. A foto será removida da galeria e do armazenamento.</p>
+        <div class="modal-excluir-botoes">
+            <button class="btn-cancelar" onclick="fecharModalExcluir()">Cancelar</button>
+            <button class="btn-confirmar-excluir" onclick="confirmarExclusao()">Excluir</button>
+        </div>
+    </section>
+</div>
+
 <!-- SUPABASE -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -832,6 +832,89 @@ body{
     line-height:1.5;
 }
 
+/* ======================================
+   MODAL DE CONFIRMAÇÃO DE EXCLUSÃO
+====================================== */
+
+.modal-excluir-conteudo{
+    max-width:400px;
+    margin:auto;
+    padding:32px 28px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+}
+
+.modal-excluir-icone{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:rgba(244,67,54,0.14);
+    border:1px solid rgba(244,67,54,0.35);
+    color:#ff8a80;
+    font-size:1.6rem;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:10px;
+}
+
+.modal-excluir-conteudo h3{
+    font-size:1.15rem;
+    color:#fff;
+    margin:0;
+}
+
+.modal-excluir-conteudo p{
+    color:var(--texto-mudo, #999);
+    font-size:0.86rem;
+    line-height:1.5;
+    margin:0 0 8px;
+}
+
+.modal-excluir-botoes{
+    display:flex;
+    gap:12px;
+    width:100%;
+    margin-top:6px;
+}
+
+.btn-cancelar,
+.btn-confirmar-excluir{
+    flex:1;
+    border:none;
+    padding:13px;
+    border-radius:var(--raio-sm);
+    font-family:'Poppins', sans-serif;
+    font-weight:600;
+    font-size:0.88rem;
+    cursor:pointer;
+    transition:all 0.2s ease;
+}
+
+.btn-cancelar{
+    background:rgba(255,255,255,0.06);
+    color:#ddd;
+}
+
+.btn-cancelar:hover{
+    background:rgba(255,255,255,0.1);
+}
+
+.btn-confirmar-excluir{
+    background:rgba(244,67,54,0.85);
+    color:#fff;
+}
+
+.btn-confirmar-excluir:hover{
+    background:rgba(244,67,54,1);
+    transform:translateY(-1px);
+    box-shadow:0 8px 20px rgba(244,67,54,0.35);
+}
+
 @keyframes fadeIn{
     from{ opacity:0; }
     to{ opacity:1; }

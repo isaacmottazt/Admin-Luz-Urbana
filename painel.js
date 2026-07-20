@@ -139,6 +139,11 @@ window.onclick = function(event) {
     if (event.target === modal) {
         modal.style.display = 'none';
     }
+
+    const modalExcluir = document.getElementById('modalExcluirAgendamento');
+    if (event.target === modalExcluir) {
+        fecharModalExcluirAgendamento();
+    }
 }
 
 /* ======================================
@@ -398,12 +403,24 @@ async function atualizarStatus(id, status) {
    EXCLUIR
 ====================================== */
 
-async function excluirAgendamento(id) {
-    const confirmar = confirm("Deseja excluir este agendamento?");
+let idAgendamentoParaExcluir = null;
 
-    if (!confirmar) {
-        return;
-    }
+function excluirAgendamento(id) {
+    idAgendamentoParaExcluir = id;
+    document.getElementById("modalExcluirAgendamento").style.display = "block";
+}
+
+function fecharModalExcluirAgendamento() {
+    idAgendamentoParaExcluir = null;
+    document.getElementById("modalExcluirAgendamento").style.display = "none";
+}
+
+async function confirmarExclusaoAgendamento() {
+
+    if (idAgendamentoParaExcluir === null) return;
+
+    const id = idAgendamentoParaExcluir;
+    fecharModalExcluirAgendamento();
 
     const {
         error

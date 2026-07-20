@@ -271,6 +271,19 @@ function mostrarBotaoInstalar() {
     </div>
 </div>
 
+<!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
+<div id="modalExcluirAgendamento" class="modal">
+    <div class="modal-content modal-excluir-conteudo">
+        <div class="modal-excluir-icone">!</div>
+        <h3>Excluir este agendamento?</h3>
+        <p>Essa ação não pode ser desfeita.</p>
+        <div class="modal-excluir-botoes">
+            <button class="btn-cancelar" onclick="fecharModalExcluirAgendamento()">Cancelar</button>
+            <button class="btn-confirmar-excluir" onclick="confirmarExclusaoAgendamento()">Excluir</button>
+        </div>
+    </div>
+</div>
+
 <script src="painel.js"></script>
 
 </body>
