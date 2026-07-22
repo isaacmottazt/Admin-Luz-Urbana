@@ -1,6 +1,6 @@
-# 📊 Painel Admin — Estúdio Luz Urbana
+# 📊 Painel Admin — Motazt Studio
 
-Painel de gerenciamento completo para o Estúdio Luz Urbana, permitindo controlar agendamentos de ensaios fotográficos e gerenciar a galeria de fotos do site público.
+Painel de gerenciamento completo para o Motazt Studio, permitindo controlar agendamentos de ensaios fotográficos e gerenciar a galeria de fotos do site público.
 
 ---
 

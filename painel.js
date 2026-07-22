@@ -1,79 +1,412 @@
 /* ======================================
-   SUPABASE
+   SUPABASE - CONFIGURAÇÃO
 ====================================== */
 
-const supabaseUrl =
-"https://tbwmsgztpyyratambgqs.supabase.co";
+const supabaseUrl = "https://tbwmsgztpyyratambgqs.supabase.co";
+const supabaseKey = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
 
-const supabaseKey =
-"sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
-
-const client =
-supabase.createClient(
-    supabaseUrl,
-    supabaseKey
-);
+const client = supabase.createClient(supabaseUrl, supabaseKey);
 
 /* ======================================
    VARIÁVEIS GLOBAIS
 ====================================== */
 
 let todosAgendamentosCache = [];
+let agendamentoParaExcluir = null;
+let calendarioMesAtual = new Date();
+let calendarioDiaSelecionadoStr = null;
 
 /* ======================================
-   VERIFICAR LOGIN
+   INICIALIZAÇÃO - ESPERAR DOM
 ====================================== */
 
-document.addEventListener(
-    "DOMContentLoaded",
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializar);
+} else {
+    inicializar();
+}
 
-    async ()=>{
-
-        try {
-
-            mostrarDiagnostico('Verificando login...');
-
-            const {
-                data:{ session },
-                error: erroSessao
-            } =
-            await client.auth.getSession();
-
-            if (erroSessao) {
-                mostrarDiagnostico('ERRO ao verificar sessão: ' + erroSessao.message, true);
-                return;
-            }
-
-            if(!session){
-
-                mostrarDiagnostico('Sem sessão ativa, redirecionando para login.html');
-
-                window.location.href =
-                "login.html";
-
-                return;
-            }
-
-            mostrarDiagnostico('Sessão OK, carregando agendamentos...');
-
-            carregarAgendamentos();
-
-        } catch (erroInicial) {
-            mostrarDiagnostico('ERRO FATAL no carregamento inicial: ' + erroInicial.message, true);
+async function inicializar() {
+    console.log('🟢 DOM Carregado, iniciando verificação...');
+    
+    try {
+        mostrarDiagnostico('🔐 Verificando autenticação...', false);
+        
+        const { data: { session }, error } = await client.auth.getSession();
+        
+        if (error) {
+            console.error('Erro de sessão:', error);
+            mostrarDiagnostico('❌ Erro de autenticação: ' + error.message, true);
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
         }
-
+        
+        if (!session) {
+            console.warn('Sem sessão ativa');
+            mostrarDiagnostico('🔐 Redirecionando para login...', false);
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+            return;
+        }
+        
+        console.log('✅ Autenticado como:', session.user.email);
+        mostrarDiagnostico('✅ Autenticado! Carregando dados...', false);
+        
+        // Aguardar um pouco e depois carregar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await carregarAgendamentos();
+        
+    } catch (e) {
+        console.error('Erro Fatal:', e);
+        mostrarDiagnostico('💥 Erro Fatal: ' + e.message, true);
     }
-);
+}
 
 /* ======================================
-   FUNÇÕES DOS CARDS
+   CARREGAR AGENDAMENTOS DO SUPABASE
 ====================================== */
 
-// Ver todos os agendamentos
+async function carregarAgendamentos() {
+    console.log('📡 Iniciando carregamento de agendamentos...');
+    mostrarDiagnostico('📡 Buscando agendamentos...', false);
+    
+    try {
+        // Consulta ao Supabase
+        const { data, error } = await client
+            .from('agendamentos')
+            .select('*')
+            .order('id', { ascending: false });
+        
+        // Verificar erros
+        if (error) {
+            console.error('Erro Supabase:', error);
+            mostrarDiagnostico('❌ Erro: ' + error.message, true);
+            
+            // Renderizar interface vazia
+            renderizarCardsDeStatus([]);
+            atualizarCards([]);
+            return;
+        }
+        
+        // Se não há dados
+        if (!data) {
+            console.warn('Nenhum dado retornado');
+            renderizarCardsDeStatus([]);
+            atualizarCards([]);
+            mostrarDiagnostico('⚠️ Nenhum agendamento encontrado', false);
+            return;
+        }
+        
+        console.log('✅ Dados recebidos:', data.length, 'agendamentos');
+        
+        // Processar dados recebidos
+        processarAgendamentos(data);
+        
+    } catch (e) {
+        console.error('Erro ao carregar:', e);
+        mostrarDiagnostico('❌ Erro ao carregar: ' + e.message, true);
+    }
+}
+
+async function processarAgendamentos(agendamentos) {
+    console.log('🔄 Processando', agendamentos.length, 'agendamentos...');
+    
+    try {
+        // Encerrar automaticamente os vencidos
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        const vencidos = [];
+        
+        for (const item of agendamentos) {
+            const statusAtual = item.status || 'pendente';
+            
+            // Só processar se não foi finalizado
+            if (statusAtual === 'pendente' || statusAtual === 'andamento') {
+                const dataItem = parseDataAgendamento(item.data);
+                
+                if (dataItem) {
+                    dataItem.setHours(0, 0, 0, 0);
+                    
+                    // Se passou da data, marcar como finalizado
+                    if (dataItem < hoje) {
+                        vencidos.push(item.id);
+                    }
+                }
+            }
+        }
+        
+        // Atualizar os vencidos
+        if (vencidos.length > 0) {
+            console.log('⏰ Finalizando', vencidos.length, 'agendamentos vencidos...');
+            
+            for (const id of vencidos) {
+                await client
+                    .from('agendamentos')
+                    .update({ status: 'finalizado' })
+                    .eq('id', id)
+                    .catch(e => console.error('Erro ao finalizar:', e));
+            }
+            
+            // Recarregar após atualizar
+            console.log('🔄 Recarregando após atualizar vencidos...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await carregarAgendamentos();
+            return;
+        }
+        
+        // Cache global
+        todosAgendamentosCache = [...agendamentos];
+        
+        console.log('📊 Renderizando cards...');
+        renderizarCardsDeStatus(agendamentos);
+        
+        console.log('📈 Atualizando interface...');
+        atualizarCards(agendamentos);
+        
+        console.log('✅ Carregamento completo!');
+        mostrarDiagnostico('✅ ' + agendamentos.length + ' agendamento(s) carregado(s)', false);
+        
+    } catch (e) {
+        console.error('Erro ao processar:', e);
+        mostrarDiagnostico('❌ Erro ao processar: ' + e.message, true);
+    }
+}
+
+/* ======================================
+   RENDERIZAR CARDS DE STATUS
+====================================== */
+
+function renderizarCardsDeStatus(agendamentos) {
+    // Separar por status
+    const pendentes = agendamentos.filter(a => a.status === 'pendente');
+    const andamento = agendamentos.filter(a => a.status === 'andamento');
+    const finalizados = agendamentos.filter(a => a.status === 'finalizado');
+    
+    console.log('Cards: Pendentes=' + pendentes.length + ', Andamento=' + andamento.length + ', Finalizados=' + finalizados.length);
+    
+    // Renderizar PENDENTES
+    const pendenteHTML = pendentes.length === 0
+        ? '<div class="sem-agendamentos">Nenhum pendente</div>'
+        : pendentes.map(item => `
+            <div class="card-agendamento" onclick="abrirDetalhesAgendamento(${item.id})">
+                <div class="card-status-top">
+                    <div class="card-id">#${item.id}</div>
+                    <span class="card-status-badge pendente-badge">Pendente</span>
+                </div>
+                <h4>${item.nome}</h4>
+                <p class="card-data">${item.data} · ${item.horario}</p>
+                <p class="card-ensaio">${item.ensaio}</p>
+                <div class="card-acoes">
+                    <button onclick="aceitarAgendamento(event, ${item.id})" class="btn-aceitar">✅ Aceitar</button>
+                    <button onclick="mostrarExcluir(${item.id})" class="btn-excluir">🗑️ Excluir</button>
+                </div>
+            </div>
+        `).join('');
+    
+    // Renderizar EM ANDAMENTO
+    const andamentoHTML = andamento.length === 0
+        ? '<div class="sem-agendamentos">Nenhum em andamento</div>'
+        : andamento.map(item => `
+            <div class="card-agendamento" onclick="abrirDetalhesAgendamento(${item.id})">
+                <div class="card-status-top">
+                    <div class="card-id">#${item.id}</div>
+                    <span class="card-status-badge andamento-badge">Em Andamento</span>
+                </div>
+                <h4>${item.nome}</h4>
+                <p class="card-data">${item.data} · ${item.horario}</p>
+                <p class="card-ensaio">${item.ensaio}</p>
+                <div class="card-acoes">
+                    <button onclick="finalizarAgendamento(event, ${item.id})" class="btn-finalizar">🎬 Finalizar</button>
+                    <button onclick="mostrarExcluir(${item.id})" class="btn-excluir">🗑️ Excluir</button>
+                </div>
+            </div>
+        `).join('');
+    
+    // Renderizar FINALIZADOS
+    const finalizadosHTML = finalizados.length === 0
+        ? '<div class="sem-agendamentos">Nenhum finalizado</div>'
+        : finalizados.map(item => `
+            <div class="card-agendamento" onclick="abrirDetalhesAgendamento(${item.id})">
+                <div class="card-status-top">
+                    <div class="card-id">#${item.id}</div>
+                    <span class="card-status-badge finalizado-badge">Finalizado</span>
+                </div>
+                <h4>${item.nome}</h4>
+                <p class="card-data">${item.data} · ${item.horario}</p>
+                <p class="card-ensaio">${item.ensaio}</p>
+                <div class="card-acoes">
+                    <button onclick="mostrarExcluir(${item.id})" class="btn-excluir">🗑️ Excluir</button>
+                </div>
+            </div>
+        `).join('');
+    
+    // Atualizar DOM
+    const pendList = document.getElementById('pendentes-lista');
+    const andList = document.getElementById('andamento-lista');
+    const finList = document.getElementById('finalizados-lista');
+    
+    if (pendList) pendList.innerHTML = pendenteHTML;
+    if (andList) andList.innerHTML = andamentoHTML;
+    if (finList) finList.innerHTML = finalizadosHTML;
+    
+    // Atualizar contadores
+    const elemPend = document.getElementById('totalPendentes');
+    const elemAnd = document.getElementById('totalAndamento');
+    const elemFin = document.getElementById('totalFinalizados');
+    
+    if (elemPend) elemPend.textContent = pendentes.length;
+    if (elemAnd) elemAnd.textContent = andamento.length;
+    if (elemFin) elemFin.textContent = finalizados.length;
+    
+    console.log('✅ Cards renderizados com sucesso');
+}
+
+/* ======================================
+   ATUALIZAR CARDS SUPERIORES
+====================================== */
+
+function atualizarCards(agendamentos) {
+    const total = agendamentos.length;
+    const aceitos = agendamentos.filter(a => a.status === 'andamento').length;
+    
+    // Atualizar elementos
+    const elemTotal = document.getElementById('totalAgendamentos');
+    const elemAceitos = document.getElementById('totalAceitos');
+    const elemClientes = document.getElementById('totalClientes');
+    
+    if (elemTotal) elemTotal.textContent = total;
+    if (elemAceitos) elemAceitos.textContent = aceitos;
+    if (elemClientes) elemClientes.textContent = total;
+    
+    console.log('📊 Cards superiores atualizados: Total=' + total);
+    
+    // Atualizar gráfico
+    renderizarGraficoMensal(agendamentos);
+    
+    // Renderizar calendário
+    renderizarCalendario();
+}
+
+/* ======================================
+   AÇÕES: ACEITAR, FINALIZAR, EXCLUIR
+====================================== */
+
+async function aceitarAgendamento(event, id) {
+    event.stopPropagation();
+    
+    console.log('✅ Aceitando agendamento #' + id);
+    mostrarDiagnostico('Aceitando agendamento #' + id + '...', false);
+    
+    try {
+        const { error } = await client
+            .from('agendamentos')
+            .update({ status: 'andamento' })
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        console.log('✅ Agendamento aceito');
+        mostrarDiagnostico('✅ Agendamento #' + id + ' aceito!', false);
+        
+        await new Promise(r => setTimeout(r, 500));
+        await carregarAgendamentos();
+        
+    } catch (e) {
+        console.error('Erro:', e);
+        mostrarDiagnostico('❌ Erro: ' + e.message, true);
+    }
+}
+
+async function finalizarAgendamento(event, id) {
+    event.stopPropagation();
+    
+    console.log('🎬 Finalizando agendamento #' + id);
+    mostrarDiagnostico('Finalizando agendamento #' + id + '...', false);
+    
+    try {
+        const { error } = await client
+            .from('agendamentos')
+            .update({ status: 'finalizado' })
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        console.log('✅ Agendamento finalizado');
+        mostrarDiagnostico('✅ Agendamento #' + id + ' finalizado!', false);
+        
+        await new Promise(r => setTimeout(r, 500));
+        await carregarAgendamentos();
+        
+    } catch (e) {
+        console.error('Erro:', e);
+        mostrarDiagnostico('❌ Erro: ' + e.message, true);
+    }
+}
+
+function mostrarExcluir(id) {
+    event?.stopPropagation?.();
+    agendamentoParaExcluir = id;
+    const modal = document.getElementById('modalExcluirAgendamento');
+    if (modal) modal.style.display = 'block';
+    console.log('🗑️ Mostrando confirmação de exclusão para #' + id);
+}
+
+function fecharModalExcluirAgendamento() {
+    const modal = document.getElementById('modalExcluirAgendamento');
+    if (modal) modal.style.display = 'none';
+    agendamentoParaExcluir = null;
+}
+
+async function confirmarExclusaoAgendamento() {
+    if (!agendamentoParaExcluir) return;
+    
+    const id = agendamentoParaExcluir;
+    console.log('🗑️ Excluindo agendamento #' + id);
+    mostrarDiagnostico('Excluindo agendamento #' + id + '...', false);
+    
+    try {
+        const { error } = await client
+            .from('agendamentos')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        console.log('✅ Agendamento excluído');
+        mostrarDiagnostico('✅ Agendamento #' + id + ' excluído!', false);
+        
+        fecharModalExcluirAgendamento();
+        
+        await new Promise(r => setTimeout(r, 500));
+        await carregarAgendamentos();
+        
+    } catch (e) {
+        console.error('Erro:', e);
+        mostrarDiagnostico('❌ Erro: ' + e.message, true);
+    }
+}
+
+function abrirDetalhesAgendamento(id) {
+    const agendamento = todosAgendamentosCache.find(a => a.id === id);
+    if (agendamento) {
+        console.log('📋 Detalhes do agendamento #' + id, agendamento);
+    }
+}
+
+/* ======================================
+   MODAIS
+====================================== */
+
 function verTodosAgendamentos() {
     const modal = document.getElementById('modalLista');
     const modalTitulo = document.getElementById('modalTitulo');
     const modalConteudo = document.getElementById('modalListaConteudo');
+    
+    if (!modal) return;
     
     modalTitulo.innerHTML = '📋 Todos os Agendamentos';
     
@@ -81,9 +414,11 @@ function verTodosAgendamentos() {
         modalConteudo.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento encontrado</div>';
     } else {
         modalConteudo.innerHTML = todosAgendamentosCache.map(item => {
-            let statusText = item.status === 'pendente' ? 'Pendente' : 'Em Andamento (Aceito)';
+            const statusText = item.status === 'pendente' ? 'Pendente' : 
+                               item.status === 'andamento' ? 'Em Andamento' : 'Finalizado';
             return `
             <div class="modal-agendamento">
+                <div class="agendamento-id-badge">#${item.id}</div>
                 <h4>${item.nome}</h4>
                 <p><strong>📞 Telefone:</strong> ${item.telefone}</p>
                 <p><strong>✉️ Email:</strong> ${item.email}</p>
@@ -98,28 +433,30 @@ function verTodosAgendamentos() {
     modal.style.display = 'block';
 }
 
-// Ver apenas agendamentos aceitos (EM ANDAMENTO)
 function verAgendamentosAceitos() {
     const modal = document.getElementById('modalLista');
     const modalTitulo = document.getElementById('modalTitulo');
     const modalConteudo = document.getElementById('modalListaConteudo');
     
+    if (!modal) return;
+    
     modalTitulo.innerHTML = '✅ Agendamentos Aceitos (Em Andamento)';
     
-    const aceitos = todosAgendamentosCache.filter(item => item.status === 'andamento');
+    const aceitos = todosAgendamentosCache.filter(a => a.status === 'andamento');
     
     if (aceitos.length === 0) {
         modalConteudo.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento aceito encontrado</div>';
     } else {
         modalConteudo.innerHTML = aceitos.map(item => `
             <div class="modal-agendamento">
+                <div class="agendamento-id-badge">#${item.id}</div>
                 <h4>${item.nome}</h4>
                 <p><strong>📞 Telefone:</strong> ${item.telefone}</p>
                 <p><strong>✉️ Email:</strong> ${item.email}</p>
                 <p><strong>📸 Ensaio:</strong> ${item.ensaio}</p>
                 <p><strong>📅 Data:</strong> ${item.data}</p>
                 <p><strong>⏰ Horário:</strong> ${item.horario}</p>
-                <p><strong>📝 Status:</strong> Aceito (Em Andamento)</p>
+                <p><strong>📝 Status:</strong> Em Andamento</p>
             </div>
         `).join('');
     }
@@ -127,501 +464,128 @@ function verAgendamentosAceitos() {
     modal.style.display = 'block';
 }
 
-// Fechar modal
 function fecharModal() {
     const modal = document.getElementById('modalLista');
-    modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
 }
 
-// Fechar modal clicando fora
 window.onclick = function(event) {
     const modal = document.getElementById('modalLista');
     if (event.target === modal) {
         modal.style.display = 'none';
     }
-
+    
     const modalExcluir = document.getElementById('modalExcluirAgendamento');
     if (event.target === modalExcluir) {
         fecharModalExcluirAgendamento();
     }
 }
 
-/* ======================================
-   FUNÇÃO PARA ATUALIZAR CARDS
-====================================== */
-
-function atualizarCards(agendamentos) {
-    // Total de agendamentos
-    const total = agendamentos.length;
-    document.getElementById('totalAgendamentos').innerHTML = total;
-    
-    // Total de aceitos (EM ANDAMENTO)
-    const aceitos = agendamentos.filter(item => item.status === 'andamento').length;
-    document.getElementById('totalAceitos').innerHTML = aceitos;
-    
-    // Total de clientes (mesmo que total de agendamentos)
-    document.getElementById('totalClientes').innerHTML = total;
-    
-    // Cache para os modais
-    todosAgendamentosCache = [...agendamentos];
-
-    // Atualizar gráfico de agendamentos por mês
-    renderizarGraficoMensal(agendamentos);
-
-    // Atualizar calendário com os pontinhos de agendamento
-    renderizarCalendario();
-}
-
-/* ======================================
-   CARREGAR AGENDAMENTOS
-====================================== */
-
-async function carregarAgendamentos() {
-
-    mostrarDiagnostico('Consultando banco de dados...');
-
-    let data, error;
-
-    try {
-        const resposta = await client
-            .from("agendamentos")
-            .select("*")
-            .order("id", { ascending: false });
-
-        data = resposta.data;
-        error = resposta.error;
-
-    } catch (erroFatal) {
-        mostrarDiagnostico('ERRO FATAL na consulta: ' + erroFatal.message, true);
-        return;
+function toggleLista(idLista) {
+    const lista = document.getElementById(idLista);
+    if (lista) {
+        lista.classList.toggle('active');
     }
-
-    console.log(data);
-    console.log(error);
-
-    if (error) {
-        mostrarDiagnostico('ERRO do Supabase: ' + error.message, true);
-        alert(error.message);
-        return;
-    }
-
-    if (!data) {
-        mostrarDiagnostico('A consulta retornou "data" vazio/undefined, sem erro explícito.', true);
-        return;
-    }
-
-    mostrarDiagnostico(`OK: ${data.length} agendamento(s) recebido(s) do banco.`);
-
-    /* ENCERRAR AUTOMATICAMENTE OS QUE JÁ PASSARAM DA DATA */
-    try {
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-
-        const vencidos = data.filter(item => {
-            const statusAtual = item.status || "pendente";
-            if (statusAtual !== "pendente" && statusAtual !== "andamento") return false;
-
-            const dataItem = parseDataAgendamento(item.data);
-            if (!dataItem) return false;
-
-            dataItem.setHours(0, 0, 0, 0);
-            return dataItem < hoje;
-        });
-
-        if (vencidos.length > 0) {
-            await Promise.all(
-                vencidos.map(item =>
-                    client.from("agendamentos").update({ status: "finalizado" }).eq("id", item.id)
-                )
-            );
-
-            // Refletir a mudança nos dados já carregados, sem precisar buscar de novo
-            vencidos.forEach(item => { item.status = "finalizado"; });
-        }
-    } catch (erroAutoFinalizar) {
-        mostrarDiagnostico('ERRO ao encerrar automaticamente vencidos: ' + erroAutoFinalizar.message, true);
-    }
-
-    try {
-
-        /* LISTAS */
-        const pendentesLista = document.getElementById("pendentes-lista");
-        const andamentoLista = document.getElementById("andamento-lista");
-        const finalizadosLista = document.getElementById("finalizados-lista");
-
-        /* LIMPAR */
-        pendentesLista.innerHTML = "";
-        andamentoLista.innerHTML = "";
-        finalizadosLista.innerHTML = "";
-
-        /* CONTADORES */
-        let pendentes = 0;
-        let andamento = 0;
-        let finalizados = 0;
-
-        /* LOOP */
-        data.forEach(item => {
-            const statusAtual = item.status || "pendente";
-
-            if (statusAtual === "pendente" || statusAtual === "andamento") {
-                const card = `
-                <div class="agendamento">
-                    <h3>${item.nome}</h3>
-                    <p><strong>Telefone:</strong> ${item.telefone}</p>
-                    <p><strong>Email:</strong> ${item.email}</p>
-                    <p><strong>Ensaio:</strong> ${item.ensaio}</p>
-                    <p><strong>Data:</strong> ${item.data}</p>
-                    <p><strong>Horário:</strong> ${item.horario}</p>
-                    <p><strong>Mensagem:</strong> ${item.mensagem || "Sem mensagem"}</p>
-                    <p><strong>Status:</strong> ${statusAtual === 'pendente' ? 'Pendente' : 'Em Andamento (Aceito)'}</p>
-                    <div class="botoes">
-                        <button class="btn-pendente" onclick="atualizarStatus(${item.id}, 'pendente')">Pendente</button>
-                        <button class="btn-andamento" onclick="atualizarStatus(${item.id}, 'andamento')">Aceitar (Andamento)</button>
-                        <button class="btn-finalizado" onclick="atualizarStatus(${item.id}, 'finalizado')">Encerrar</button>
-                        <button class="btn-excluir" onclick="excluirAgendamento(${item.id})">Excluir</button>
-                    </div>
-                </div>
-                `;
-
-                if (statusAtual === "pendente") {
-                    pendentes++;
-                    pendentesLista.innerHTML += card;
-                } else if (statusAtual === "andamento") {
-                    andamento++;
-                    andamentoLista.innerHTML += card;
-                }
-            } else if (statusAtual === "finalizado" || statusAtual === "concluido") {
-                finalizados++;
-
-                const dataItem = parseDataAgendamento(item.data);
-                const hojeCheck = new Date();
-                hojeCheck.setHours(0, 0, 0, 0);
-                if (dataItem) dataItem.setHours(0, 0, 0, 0);
-
-                const dataJaPassou = dataItem && dataItem < hojeCheck;
-
-                const botaoReabrir = dataJaPassou
-                    ? ''
-                    : `<button class="btn-andamento" onclick="atualizarStatus(${item.id}, 'andamento')">Reabrir (Andamento)</button>`;
-
-                finalizadosLista.innerHTML += `
-                <div class="agendamento agendamento--finalizado">
-                    <h3>${item.nome}</h3>
-                    <p><strong>Telefone:</strong> ${item.telefone}</p>
-                    <p><strong>Email:</strong> ${item.email}</p>
-                    <p><strong>Ensaio:</strong> ${item.ensaio}</p>
-                    <p><strong>Data:</strong> ${item.data}</p>
-                    <p><strong>Horário:</strong> ${item.horario}</p>
-                    <p><strong>Mensagem:</strong> ${item.mensagem || "Sem mensagem"}</p>
-                    <p><strong>Status:</strong> Finalizado</p>
-                    <div class="botoes">
-                        ${botaoReabrir}
-                        <button class="btn-excluir" onclick="excluirAgendamento(${item.id})">Excluir</button>
-                    </div>
-                </div>
-                `;
-            }
-        });
-
-        /* CONTADORES */
-        document.getElementById("totalPendentes").innerHTML = pendentes;
-        document.getElementById("totalAndamento").innerHTML = andamento;
-        document.getElementById("totalFinalizados").innerHTML = finalizados;
-
-        mostrarDiagnostico(`Renderizado: ${pendentes} pendente(s), ${andamento} em andamento, ${finalizados} finalizado(s).`);
-
-    } catch (erroRender) {
-        mostrarDiagnostico('ERRO ao renderizar as listas: ' + erroRender.message, true);
-        return;
-    }
-
-    /* ATUALIZAR NOVOS CARDS, GRÁFICO E CALENDÁRIO */
-    try {
-        atualizarCards(data);
-        mostrarDiagnostico(`Tudo carregado com sucesso (${data.length} agendamento(s)).`);
-    } catch (erroCards) {
-        mostrarDiagnostico('ERRO ao atualizar cards/gráfico/calendário: ' + erroCards.message, true);
-    }
-}
-
-/* ======================================
-   DIAGNÓSTICO VISÍVEL NA TELA
-   (temporário, para identificar onde o
-   carregamento está travando/falhando)
-====================================== */
-
-function mostrarDiagnostico(mensagem, ehErro) {
-    // Diagnóstico visual desativado.
-    return;
-}
-
-/* ======================================
-   ATUALIZAR STATUS
-====================================== */
-
-async function atualizarStatus(id, status) {
-
-    // Não permitir reabrir (voltar para pendente/andamento) um ensaio cuja data já passou
-    if (status === "pendente" || status === "andamento") {
-        const item = todosAgendamentosCache.find(a => a.id === id);
-        if (item) {
-            const dataItem = parseDataAgendamento(item.data);
-            if (dataItem) {
-                const hojeCheck = new Date();
-                hojeCheck.setHours(0, 0, 0, 0);
-                dataItem.setHours(0, 0, 0, 0);
-
-                if (dataItem < hojeCheck) {
-                    alert("Este ensaio já passou da data e não pode ser reaberto.");
-                    return;
-                }
-            }
-        }
-    }
-
-    const {
-        error
-    } = await client
-
-    .from("agendamentos")
-
-    .update({
-        status: status
-    })
-
-    .eq("id", id);
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    carregarAgendamentos();
-}
-
-/* ======================================
-   EXCLUIR
-====================================== */
-
-let idAgendamentoParaExcluir = null;
-
-function excluirAgendamento(id) {
-    idAgendamentoParaExcluir = id;
-    document.getElementById("modalExcluirAgendamento").style.display = "block";
-}
-
-function fecharModalExcluirAgendamento() {
-    idAgendamentoParaExcluir = null;
-    document.getElementById("modalExcluirAgendamento").style.display = "none";
-}
-
-async function confirmarExclusaoAgendamento() {
-
-    if (idAgendamentoParaExcluir === null) return;
-
-    const id = idAgendamentoParaExcluir;
-    fecharModalExcluirAgendamento();
-
-    const {
-        error
-    } = await client
-
-    .from("agendamentos")
-
-    .delete()
-
-    .eq("id", id);
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    carregarAgendamentos();
-}
-
-/* ======================================
-   LOGOUT
-====================================== */
-
-async function logout() {
-    await client.auth.signOut();
-    window.location.href = "login.html";
-}
-
-/* ======================================
-   ABRIR / FECHAR LISTA
-====================================== */
-
-function toggleLista(id) {
-    const lista = document.getElementById(id);
-    lista.classList.toggle("active");
 }
 
 /* ======================================
    CALENDÁRIO
 ====================================== */
 
-let calendarioMesAtualIndex = new Date().getMonth();
-let calendarioAnoAtual = new Date().getFullYear();
-let calendarioDiaSelecionadoStr = null;
-
-const CALENDARIO_MESES = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-];
-
-// Converte item.data (dd/mm/aaaa ou aaaa-mm-dd) em objeto Date, igual à lógica usada em getProximosHorarios
-function parseDataAgendamento(dataStr) {
-    if (!dataStr) return null;
-
-    let dataObj = null;
-
-    if (dataStr.includes('/')) {
-        const partes = dataStr.split('/');
-        if (partes.length === 3) {
-            dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
-        }
-    } else if (dataStr.includes('-')) {
-        dataObj = new Date(dataStr);
-    } else {
-        dataObj = new Date(dataStr);
-    }
-
-    if (!dataObj || isNaN(dataObj.getTime())) return null;
-
-    return dataObj;
-}
-
-function chaveData(dataObj) {
-    const ano = dataObj.getFullYear();
-    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-    const dia = String(dataObj.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
-}
+const GRAFICO_MESES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 function calendarioMesAnterior() {
-    calendarioMesAtualIndex--;
-    if (calendarioMesAtualIndex < 0) {
-        calendarioMesAtualIndex = 11;
-        calendarioAnoAtual--;
-    }
+    calendarioMesAtual = new Date(calendarioMesAtual.getFullYear(), calendarioMesAtual.getMonth() - 1, 1);
+    renderizarCalendario();
+}
+
+function calendarioIrParaHoje() {
+    calendarioMesAtual = new Date();
     renderizarCalendario();
 }
 
 function calendarioMesSeguinte() {
-    calendarioMesAtualIndex++;
-    if (calendarioMesAtualIndex > 11) {
-        calendarioMesAtualIndex = 0;
-        calendarioAnoAtual++;
-    }
+    calendarioMesAtual = new Date(calendarioMesAtual.getFullYear(), calendarioMesAtual.getMonth() + 1, 1);
     renderizarCalendario();
-}
-
-function calendarioMesAtual() {
-    const hoje = new Date();
-    calendarioMesAtualIndex = hoje.getMonth();
-    calendarioAnoAtual = hoje.getFullYear();
-    renderizarCalendario();
-}
-
-// Agrupa os agendamentos ativos (pendente/andamento) por chave de data (aaaa-mm-dd)
-function agruparAgendamentosPorData() {
-    const grupos = {};
-
-    todosAgendamentosCache.forEach(item => {
-        if (item.status !== 'pendente' && item.status !== 'andamento') return;
-
-        const dataObj = parseDataAgendamento(item.data);
-        if (!dataObj) return;
-
-        const chave = chaveData(dataObj);
-        if (!grupos[chave]) grupos[chave] = [];
-        grupos[chave].push(item);
-    });
-
-    return grupos;
 }
 
 function renderizarCalendario() {
+    const ano = calendarioMesAtual.getFullYear();
+    const mes = calendarioMesAtual.getMonth();
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const titulo = document.getElementById('calendarioMesAno');
+    if (titulo) titulo.textContent = `${meses[mes]} ${ano}`;
+    
+    const primeiroDia = new Date(ano, mes, 1);
+    const ultimoDia = new Date(ano, mes + 1, 0);
+    const diaSemanaPrimeiro = primeiroDia.getDay();
+    const diasNoMes = ultimoDia.getDate();
+    
     const grid = document.getElementById('calendarioGrid');
-    const tituloEl = document.getElementById('calendarioMesAno');
-    if (!grid || !tituloEl) return;
-
-    tituloEl.textContent = `${CALENDARIO_MESES[calendarioMesAtualIndex]} ${calendarioAnoAtual}`;
-
-    const grupos = agruparAgendamentosPorData();
-
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const chaveHoje = chaveData(hoje);
-
-    const primeiroDiaSemana = new Date(calendarioAnoAtual, calendarioMesAtualIndex, 1).getDay();
-    const totalDias = new Date(calendarioAnoAtual, calendarioMesAtualIndex + 1, 0).getDate();
-
-    let html = '';
-
-    for (let i = 0; i < primeiroDiaSemana; i++) {
-        html += `<div class="calendario-dia calendario-dia--vazio"></div>`;
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    // Dias vazios
+    for (let i = 0; i < diaSemanaPrimeiro; i++) {
+        const div = document.createElement('div');
+        div.className = 'calendario-dia calendario-dia--vazio';
+        grid.appendChild(div);
     }
-
-    for (let dia = 1; dia <= totalDias; dia++) {
-        const dataObj = new Date(calendarioAnoAtual, calendarioMesAtualIndex, dia);
-        const chave = chaveData(dataObj);
-        const itensDoDia = grupos[chave] || [];
-
-        let classes = 'calendario-dia';
-        if (chave === chaveHoje) classes += ' calendario-dia--hoje';
-        if (chave === calendarioDiaSelecionadoStr) classes += ' calendario-dia--selecionado';
-
-        let pontosHtml = '';
-        if (itensDoDia.length > 0) {
-            const temPendente = itensDoDia.some(i => i.status === 'pendente');
-            const temAndamento = itensDoDia.some(i => i.status === 'andamento');
-            pontosHtml = '<div class="calendario-dia-pontos">';
-            if (temPendente) pontosHtml += '<span class="calendario-ponto"></span>';
-            if (temAndamento) pontosHtml += '<span class="calendario-ponto calendario-ponto--azul"></span>';
-            pontosHtml += '</div>';
+    
+    // Dias do mês
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+        const div = document.createElement('div');
+        const dataStr = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+        
+        const agendamentosNoDia = todosAgendamentosCache.filter(a => normalizarDataParaChave(a.data) === dataStr).length;
+        
+        if (agendamentosNoDia > 0) {
+            div.className = 'calendario-dia calendario-dia--comAgendamento';
+            div.innerHTML = `<span>${dia}</span><span class="calendario-ponto"></span>`;
+        } else {
+            div.className = 'calendario-dia';
+            div.innerHTML = `<span>${dia}</span>`;
         }
-
-        html += `
-            <div class="${classes}" onclick="selecionarDiaCalendario('${chave}')">
-                ${dia}
-                ${pontosHtml}
-            </div>
-        `;
+        
+        const agora = new Date();
+        if (dia === agora.getDate() && mes === agora.getMonth() && ano === agora.getFullYear()) {
+            div.classList.add('calendario-dia--hoje');
+        }
+        
+        if (calendarioDiaSelecionadoStr === dataStr) {
+            div.classList.add('calendario-dia--selecionado');
+        }
+        
+        div.onclick = () => {
+            calendarioDiaSelecionadoStr = dataStr;
+            selecionarDiaCalendario(dataStr);
+        };
+        
+        grid.appendChild(div);
     }
-
-    grid.innerHTML = html;
-
-    // Se o dia selecionado não pertence mais ao mês visível, limpa a seleção
+    
     if (calendarioDiaSelecionadoStr) {
-        const [anoSel, mesSel] = calendarioDiaSelecionadoStr.split('-').map(Number);
-        if (anoSel !== calendarioAnoAtual || (mesSel - 1) !== calendarioMesAtualIndex) {
-            document.getElementById('calendarioDiaSelecionado').innerHTML = '';
+        const partes = calendarioDiaSelecionadoStr.split('-');
+        if (parseInt(partes[0]) === ano && parseInt(partes[1]) === mes + 1) {
+            selecionarDiaCalendario(calendarioDiaSelecionadoStr);
+        } else {
+            const container = document.getElementById('calendarioDiaSelecionado');
+            if (container) container.innerHTML = '';
         }
     }
 }
 
-function selecionarDiaCalendario(chave) {
-    if (calendarioDiaSelecionadoStr === chave) {
-        // Clicar de novo no mesmo dia fecha a seleção
-        calendarioDiaSelecionadoStr = null;
-        document.getElementById('calendarioDiaSelecionado').innerHTML = '';
-        renderizarCalendario();
-        return;
-    }
-
-    calendarioDiaSelecionadoStr = chave;
-
-    const grupos = agruparAgendamentosPorData();
-    const itensDoDia = grupos[chave] || [];
-
-    const [ano, mes, dia] = chave.split('-');
+function selecionarDiaCalendario(dataStr) {
+    const [ano, mes, dia] = dataStr.split('-');
     const tituloData = `${dia}/${mes}/${ano}`;
-
+    const itensDoDia = todosAgendamentosCache.filter(a => normalizarDataParaChave(a.data) === dataStr);
     const container = document.getElementById('calendarioDiaSelecionado');
-
+    
+    if (!container) return;
+    
     if (itensDoDia.length === 0) {
         container.innerHTML = `
             <div class="calendario-dia-selecionado-topo">
@@ -632,9 +596,11 @@ function selecionarDiaCalendario(chave) {
         `;
     } else {
         const cardsHtml = itensDoDia.map(item => {
-            const statusText = item.status === 'pendente' ? 'Pendente' : 'Em Andamento (Aceito)';
+            const statusText = item.status === 'pendente' ? 'Pendente' : 
+                               item.status === 'andamento' ? 'Em Andamento' : 'Finalizado';
             return `
                 <div class="modal-agendamento">
+                    <div class="agendamento-id-badge">#${item.id}</div>
                     <h4>${item.nome}</h4>
                     <p><strong>📞 Telefone:</strong> ${item.telefone}</p>
                     <p><strong>⏰ Horário:</strong> ${item.horario}</p>
@@ -642,55 +608,54 @@ function selecionarDiaCalendario(chave) {
                 </div>
             `;
         }).join('');
-
+        
         container.innerHTML = `
             <div class="calendario-dia-selecionado-topo">
-                <h3>${tituloData} &middot; ${itensDoDia.length} agendamento(s)</h3>
+                <h3>${tituloData} · ${itensDoDia.length} agendamento(s)</h3>
                 <span class="calendario-dia-fechar" onclick="fecharDiaCalendario()">&times;</span>
             </div>
             ${cardsHtml}
         `;
     }
-
-    renderizarCalendario();
 }
 
 function fecharDiaCalendario() {
     calendarioDiaSelecionadoStr = null;
-    document.getElementById('calendarioDiaSelecionado').innerHTML = '';
+    const container = document.getElementById('calendarioDiaSelecionado');
+    if (container) container.innerHTML = '';
     renderizarCalendario();
 }
-
-/* ======================================
-   VER TODOS ORGANIZADOS POR DATA
-====================================== */
 
 function verTodosPorData() {
     const modal = document.getElementById('modalLista');
     const modalTitulo = document.getElementById('modalTitulo');
     const modalConteudo = document.getElementById('modalListaConteudo');
-
+    
+    if (!modal) return;
+    
     modalTitulo.innerHTML = '🗓️ Agendamentos por Data';
-
+    
     const grupos = agruparAgendamentosPorData();
     const chaves = Object.keys(grupos).sort();
-
+    
     if (chaves.length === 0) {
         modalConteudo.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento encontrado</div>';
         modal.style.display = 'block';
         return;
     }
-
+    
     modalConteudo.innerHTML = chaves.map(chave => {
         const [ano, mes, dia] = chave.split('-');
         const tituloData = `${dia}/${mes}/${ano}`;
-
+        
         const itensOrdenados = grupos[chave].slice().sort((a, b) => a.horario.localeCompare(b.horario));
-
+        
         const cardsHtml = itensOrdenados.map(item => {
-            const statusText = item.status === 'pendente' ? 'Pendente' : 'Em Andamento (Aceito)';
+            const statusText = item.status === 'pendente' ? 'Pendente' : 
+                               item.status === 'andamento' ? 'Em Andamento' : 'Finalizado';
             return `
                 <div class="modal-agendamento">
+                    <div class="agendamento-id-badge">#${item.id}</div>
                     <h4>${item.nome}</h4>
                     <p><strong>📞 Telefone:</strong> ${item.telefone}</p>
                     <p><strong>✉️ Email:</strong> ${item.email}</p>
@@ -700,7 +665,7 @@ function verTodosPorData() {
                 </div>
             `;
         }).join('');
-
+        
         return `
             <div class="data-grupo">
                 <div class="data-grupo-titulo">${tituloData}</div>
@@ -708,22 +673,18 @@ function verTodosPorData() {
             </div>
         `;
     }).join('');
-
+    
     modal.style.display = 'block';
 }
 
 /* ======================================
-   GRÁFICO DE AGENDAMENTOS POR MÊS
+   GRÁFICO
 ====================================== */
 
-const GRAFICO_MESES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-
-// Conta quantos agendamentos existem em cada um dos últimos 6 meses (incluindo o atual)
 function contarAgendamentosPorMes(agendamentos) {
     const hoje = new Date();
     const meses = [];
-
-    // Monta os últimos 6 meses, do mais antigo para o mais recente
+    
     for (let i = 5; i >= 0; i--) {
         const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
         meses.push({
@@ -733,15 +694,15 @@ function contarAgendamentosPorMes(agendamentos) {
             total: 0
         });
     }
-
+    
     agendamentos.forEach(item => {
         const dataObj = parseDataAgendamento(item.data);
         if (!dataObj) return;
-
+        
         const alvo = meses.find(m => m.ano === dataObj.getFullYear() && m.mes === dataObj.getMonth());
         if (alvo) alvo.total++;
     });
-
+    
     return meses;
 }
 
@@ -749,39 +710,40 @@ function renderizarGraficoMensal(agendamentos) {
     const canvas = document.getElementById('graficoMensalCanvas');
     const legenda = document.getElementById('graficoLegenda');
     const tagVariacao = document.getElementById('graficoVariacao');
+    
     if (!canvas || !legenda) return;
-
+    
     const meses = contarAgendamentosPorMes(agendamentos);
-
-    // Ajustar resolução do canvas ao tamanho real exibido (evita ficar borrado)
+    
     const wrap = canvas.parentElement;
     const larguraCss = wrap.clientWidth;
     const alturaCss = wrap.clientHeight;
     const dpr = window.devicePixelRatio || 1;
+    
     canvas.width = larguraCss * dpr;
     canvas.height = alturaCss * dpr;
-
+    
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, larguraCss, alturaCss);
-
+    
     const maiorValor = Math.max(...meses.map(m => m.total), 1);
-
+    
     const padInferior = 26;
     const padSuperior = 14;
     const alturaUtil = alturaCss - padInferior - padSuperior;
-
+    
     const qtdBarras = meses.length;
     const gap = 14;
     const larguraBarra = (larguraCss - gap * (qtdBarras + 1)) / qtdBarras;
-
+    
     meses.forEach((m, i) => {
         const alturaBarra = m.total === 0 ? 3 : Math.max(6, (m.total / maiorValor) * alturaUtil);
         const x = gap + i * (larguraBarra + gap);
         const y = padSuperior + (alturaUtil - alturaBarra);
-
+        
         const ehMesAtual = (i === meses.length - 1);
-
+        
         const grad = ctx.createLinearGradient(0, y, 0, y + alturaBarra);
         if (ehMesAtual) {
             grad.addColorStop(0, '#e8c07d');
@@ -790,12 +752,11 @@ function renderizarGraficoMensal(agendamentos) {
             grad.addColorStop(0, 'rgba(255,255,255,0.22)');
             grad.addColorStop(1, 'rgba(255,255,255,0.08)');
         }
-
+        
         ctx.fillStyle = grad;
         roundRect(ctx, x, y, larguraBarra, alturaBarra, 6);
         ctx.fill();
-
-        // Número acima da barra
+        
         if (m.total > 0) {
             ctx.fillStyle = ehMesAtual ? '#e8c07d' : '#ccc';
             ctx.font = '600 12px Poppins, sans-serif';
@@ -803,43 +764,38 @@ function renderizarGraficoMensal(agendamentos) {
             ctx.fillText(m.total, x + larguraBarra / 2, y - 8);
         }
     });
-
-    // Legenda com os meses abaixo do gráfico
+    
     legenda.innerHTML = meses.map((m, i) => {
         const classeExtra = (i === meses.length - 1) ? ' grafico-legenda-item--atual' : '';
         return `<span class="grafico-legenda-item${classeExtra}">${m.label}</span>`;
     }).join('');
-
-    // Variação percentual: mês atual vs mês anterior
+    
     const mesAtualTotal = meses[meses.length - 1].total;
     const mesAnteriorTotal = meses[meses.length - 2].total;
-
-    if (!tagVariacao) return;
-
-    if (mesAnteriorTotal === 0 && mesAtualTotal === 0) {
-        tagVariacao.textContent = 'Sem dados ainda';
-        tagVariacao.className = 'tag-variacao';
-    } else if (mesAnteriorTotal === 0) {
-        tagVariacao.textContent = `▲ Novo neste mês (${mesAtualTotal})`;
-        tagVariacao.className = 'tag-variacao tag-variacao--alta';
-    } else {
-        const variacao = ((mesAtualTotal - mesAnteriorTotal) / mesAnteriorTotal) * 100;
-        const variacaoArred = Math.round(variacao);
-
-        if (variacaoArred > 0) {
-            tagVariacao.textContent = `▲ ${variacaoArred}% a mais que o mês anterior`;
+    
+    if (tagVariacao) {
+        if (mesAnteriorTotal === 0 && mesAtualTotal === 0) {
+            tagVariacao.textContent = 'Sem dados ainda';
+        } else if (mesAnteriorTotal === 0) {
+            tagVariacao.textContent = `▲ Novo (${mesAtualTotal})`;
             tagVariacao.className = 'tag-variacao tag-variacao--alta';
-        } else if (variacaoArred < 0) {
-            tagVariacao.textContent = `▼ ${Math.abs(variacaoArred)}% a menos que o mês anterior`;
-            tagVariacao.className = 'tag-variacao tag-variacao--baixa';
         } else {
-            tagVariacao.textContent = 'Igual ao mês anterior';
-            tagVariacao.className = 'tag-variacao';
+            const variacao = ((mesAtualTotal - mesAnteriorTotal) / mesAnteriorTotal) * 100;
+            const variacaoArred = Math.round(variacao);
+            
+            if (variacaoArred > 0) {
+                tagVariacao.textContent = `▲ ${variacaoArred}% ↑`;
+                tagVariacao.className = 'tag-variacao tag-variacao--alta';
+            } else if (variacaoArred < 0) {
+                tagVariacao.textContent = `▼ ${Math.abs(variacaoArred)}% ↓`;
+                tagVariacao.className = 'tag-variacao tag-variacao--baixa';
+            } else {
+                tagVariacao.textContent = '= Igual';
+            }
         }
     }
 }
 
-// Utilitário para desenhar retângulo com cantos arredondados no canvas
 function roundRect(ctx, x, y, largura, altura, raio) {
     const r = Math.min(raio, largura / 2, altura / 2);
     ctx.beginPath();
@@ -853,9 +809,105 @@ function roundRect(ctx, x, y, largura, altura, raio) {
     ctx.closePath();
 }
 
-// Redesenha o gráfico ao redimensionar a tela (ex: rotação do celular)
 window.addEventListener('resize', () => {
-    if (todosAgendamentosCache.length > 0 || document.getElementById('graficoMensalCanvas')) {
+    if (todosAgendamentosCache.length > 0) {
         renderizarGraficoMensal(todosAgendamentosCache);
     }
 });
+
+/* ======================================
+   UTILITÁRIOS
+====================================== */
+
+function parseDataAgendamento(dataStr) {
+    if (!dataStr) return null;
+    
+    // Formato ISO: AAAA-MM-DD
+    if (dataStr.includes('-')) {
+        const partes = dataStr.split('-');
+        if (partes.length !== 3) return null;
+        const [ano, mes, dia] = partes;
+        return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+    }
+    
+    // Formato BR: DD/MM/AAAA
+    const partes = dataStr.split('/');
+    if (partes.length !== 3) return null;
+    const [dia, mes, ano] = partes;
+    return new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+}
+
+// Converte qualquer formato de data (BR ou ISO) para a chave ISO "AAAA-MM-DD",
+// usada internamente para agrupar e comparar agendamentos por dia.
+function normalizarDataParaChave(dataStr) {
+    if (!dataStr) return null;
+    
+    if (dataStr.includes('-')) {
+        const [ano, mes, dia] = dataStr.split('-');
+        if (!ano || !mes || !dia) return null;
+        return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+    
+    if (dataStr.includes('/')) {
+        const [dia, mes, ano] = dataStr.split('/');
+        if (!ano || !mes || !dia) return null;
+        return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
+    
+    return null;
+}
+
+function agruparAgendamentosPorData() {
+    const grupos = {};
+    todosAgendamentosCache.forEach(item => {
+        const chave = normalizarDataParaChave(item.data);
+        if (!chave) return;
+        if (!grupos[chave]) grupos[chave] = [];
+        grupos[chave].push(item);
+    });
+    return grupos;
+}
+
+/* ======================================
+   DIAGNÓSTICO
+====================================== */
+
+function mostrarDiagnostico(mensagem, ehErro = false) {
+    console.log((ehErro ? '❌' : '✅') + ' ' + mensagem);
+    
+    let diag = document.getElementById('diagnostico');
+    if (!diag) {
+        diag = document.createElement('div');
+        diag.id = 'diagnostico';
+        document.body.appendChild(diag);
+    }
+    
+    diag.textContent = mensagem;
+    diag.className = ehErro ? 'erro' : 'sucesso';
+    diag.style.display = 'block';
+    
+    if (diag.timeoutId) clearTimeout(diag.timeoutId);
+    diag.timeoutId = setTimeout(() => {
+        diag.style.display = 'none';
+    }, 4000);
+}
+
+/* ======================================
+   LOGOUT
+====================================== */
+
+async function logout() {
+    try {
+        mostrarDiagnostico('Desconectando...', false);
+        const { error } = await client.auth.signOut();
+        if (error) throw error;
+        
+        console.log('Logout bem-sucedido');
+        window.location.href = 'login.html';
+    } catch (e) {
+        console.error('Erro ao logout:', e);
+        mostrarDiagnostico('❌ Erro ao logout: ' + e.message, true);
+    }
+}
+
+console.log('✅ painel.js carregado com sucesso');

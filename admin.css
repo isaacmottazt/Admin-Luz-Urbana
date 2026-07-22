@@ -85,6 +85,13 @@
     color:var(--ouro-claro);
 }
 
+.upload-aviso{
+    font-size:0.82rem;
+    color:var(--texto-mudo, #999);
+    line-height:1.5;
+    margin:0;
+}
+
 /* ======================================
    GALERIA
 ====================================== */

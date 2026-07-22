@@ -9,7 +9,7 @@ name="viewport"
 content="width=device-width, initial-scale=1.0">
 
 <title>
-Admin | Estúdio Luz Urbana
+Admin | Motazt Studio
 </title>
 
 <link
@@ -36,6 +36,7 @@ rel="stylesheet">
     <div class="faixa-linha"></div>
     <a class="faixa-btn" href="painel.html" title="Painel">📊</a>
     <button class="faixa-btn" onclick="abrirModalUpload()" title="Enviar fotos">📤</button>
+    <button class="faixa-btn" onclick="abrirModalUploadDestaque()" title="Gerenciar Momentos Capturados">⭐</button>
     <div class="faixa-espaco"></div>
     <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair">⎋</button>
 </aside>
@@ -46,7 +47,7 @@ rel="stylesheet">
 <header class="cabecalho">
     <div class="cabecalho-titulo">
         <h1>Painel Admin</h1>
-        <p>Gerencie as fotos da galeria do Estúdio Luz Urbana</p>
+        <p>Gerencie as fotos da galeria do Motazt Studio</p>
     </div>
 </header>
 
@@ -80,6 +81,38 @@ rel="stylesheet">
     </section>
 </div>
 
+<!-- UPLOAD DESTAQUES (MODAL) -->
+<div class="modal-overlay" id="modalUploadDestaque" onclick="fecharModalUploadDestaqueFora(event)">
+    <section class="painel-vidro upload-box modal-caixa">
+        <div class="painel-vidro-topo">
+            <h2>Momentos Capturados</h2>
+            <button class="modal-fechar" onclick="fecharModalUploadDestaque()" title="Fechar">✕</button>
+        </div>
+
+        <div class="upload-corpo">
+
+            <p class="upload-aviso">Escolha até 4 fotos para aparecer em destaque no site, logo antes da seção de contato.</p>
+
+            <label class="upload-campo" for="imagemDestaque">
+                <input
+                type="file"
+                id="imagemDestaque"
+                multiple
+                accept="image/*">
+            </label>
+
+            <button
+            class="btn-enviar"
+            onclick="enviarImagemDestaque()">
+            📤 Enviar Destaques
+            </button>
+
+            <p id="statusDestaque" class="upload-status"></p>
+
+        </div>
+    </section>
+</div>
+
 <!-- GALERIA -->
 <section class="painel-vidro galeria-secao">
     <div class="painel-vidro-topo">
@@ -89,6 +122,19 @@ rel="stylesheet">
 
     <div
     id="galeria-admin"
+    class="galeria-admin">
+    </div>
+</section>
+
+<!-- MOMENTOS CAPTURADOS -->
+<section class="painel-vidro galeria-secao">
+    <div class="painel-vidro-topo">
+        <h2>Momentos Capturados</h2>
+        <span class="tag-suave">Máx. 4 fotos · aparece antes do contato</span>
+    </div>
+
+    <div
+    id="destaque-admin"
     class="galeria-admin">
     </div>
 </section>

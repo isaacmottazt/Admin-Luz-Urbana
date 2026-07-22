@@ -17,6 +17,10 @@ rel="stylesheet"
 href="painel.css">
 
 <link
+rel="stylesheet"
+href="painel-id-styles.css">
+
+<link
 href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
 rel="stylesheet">
 
@@ -27,10 +31,40 @@ rel="stylesheet">
 <meta name="theme-color" content="#d6a04c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Luz Urbana">
+<meta name="apple-mobile-web-app-title" content="Motazt Studio">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+
+<!-- Diagnóstico de Carregamento -->
+<style>
+    #diagnostico {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #51cf66;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        z-index: 10000;
+        max-width: 300px;
+        word-break: break-word;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: none;
+        animation: slideIn 0.3s ease;
+    }
+    
+    #diagnostico.erro {
+        background: #ff6b6b;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+</style>
 
 <script>
 if ('serviceWorker' in navigator) {
@@ -145,6 +179,8 @@ function mostrarBotaoInstalar() {
     <button class="faixa-btn" onclick="verTodosAgendamentos()" title="Todos os agendamentos">📅</button>
     <button class="faixa-btn" onclick="verAgendamentosAceitos()" title="Aceitos">✅</button>
     <a class="faixa-btn" href="index.html" title="Galeria">🖼️</a>
+    <a class="faixa-btn" href="admin-galerias.html" title="Galerias dos Clientes">📸</a>
+    <a class="faixa-btn" href="horarios-painel.html" title="Horários e Cancelamento">⏱️</a>
     <div class="faixa-espaco"></div>
     <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair">⎋</button>
 </aside>
@@ -155,7 +191,7 @@ function mostrarBotaoInstalar() {
 <header class="cabecalho">
     <div class="cabecalho-titulo">
         <h1>Agendamentos</h1>
-        <p>Acompanhamento em tempo real &middot; Luz Urbana</p>
+        <p>Acompanhamento em tempo real &middot; Motazt Studio</p>
     </div>
 
     <div class="cabecalho-stats">
@@ -180,7 +216,7 @@ function mostrarBotaoInstalar() {
         <h2 id="calendarioMesAno">Calendário</h2>
         <div class="calendario-nav">
             <button class="calendario-nav-btn" onclick="calendarioMesAnterior()" title="Mês anterior">‹</button>
-            <button class="calendario-nav-btn" onclick="calendarioMesAtual()" title="Hoje">•</button>
+            <button class="calendario-nav-btn" onclick="calendarioIrParaHoje()" title="Hoje">•</button>
             <button class="calendario-nav-btn" onclick="calendarioMesSeguinte()" title="Próximo mês">›</button>
         </div>
     </div>
@@ -224,7 +260,7 @@ function mostrarBotaoInstalar() {
                 </div>
                 <span id="totalPendentes">0</span>
             </div>
-            <div id="pendentes-lista" class="lista-agendamentos"></div>
+            <div id="pendentes-lista" class="lista-agendamentos active"></div>
         </div>
 
         <div class="painel-vidro status-box">
@@ -235,7 +271,7 @@ function mostrarBotaoInstalar() {
                 </div>
                 <span id="totalAndamento">0</span>
             </div>
-            <div id="andamento-lista" class="lista-agendamentos"></div>
+            <div id="andamento-lista" class="lista-agendamentos active"></div>
         </div>
 
         <div class="painel-vidro status-box">

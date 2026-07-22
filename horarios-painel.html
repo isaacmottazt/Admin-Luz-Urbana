@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração de Horários — Painel Admin</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #d6a04c;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(214, 160, 76, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #d6a04c;
+        }
+
+        .card-status {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(214, 160, 76, 0.2);
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #d6a04c;
+        }
+
+        .config-row {
+            margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .config-row label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #ccc;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="time"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        input[type="time"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #d6a04c;
+            box-shadow: 0 0 10px rgba(214, 160, 76, 0.2);
+        }
+
+        input[type="time"]::placeholder {
+            color: #666;
+        }
+
+        .horarios-lista {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .horario-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .horario-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .horario-item span {
+            font-weight: 500;
+            color: #d6a04c;
+        }
+
+        .horario-item button {
+            padding: 4px 8px;
+            background: rgba(255, 67, 67, 0.2);
+            border: 1px solid rgba(255, 67, 67, 0.5);
+            color: #ff4343;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .horario-item button:hover {
+            background: rgba(255, 67, 67, 0.3);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #d6a04c;
+        }
+
+        .checkbox-item label {
+            font-size: 13px;
+            font-weight: 400;
+            color: #ccc;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d6a04c 0%, #c9933d 100%);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(214, 160, 76, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .config-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .config-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #d6a04c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .info-box {
+            background: rgba(214, 160, 76, 0.1);
+            border-left: 3px solid #d6a04c;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #ddd;
+            margin-bottom: 16px;
+        }
+
+        .badge-novo {
+            display: inline-block;
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: #d6a04c;
+            border-bottom-color: #d6a04c;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .success-message {
+            background: rgba(52, 211, 153, 0.15);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #34d399;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+
+            .config-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="painel.html" style="color:inherit; text-decoration:none; opacity:0.7; font-size:14px;">← Voltar ao painel</a>
+            <h1>⏰ Configuração de Horários</h1>
+            <p>Defina os horários disponíveis para cada tipo de ensaio</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="abarajarTipo('casamento')">Casamento</button>
+            <button class="tab-btn" onclick="abarajarTipo('individual')">Individual</button>
+            <button class="tab-btn" onclick="abarajarTipo('casal')">Casal</button>
+            <button class="tab-btn" onclick="abarajarTipo('familiar')">Familiar</button>
+            <button class="tab-btn" onclick="abarajarTipo('gestante')">Gestante</button>
+            <button class="tab-btn" onclick="abarajarTipo('aniversario')">Aniversário</button>
+            <button class="tab-btn" onclick="abarajarTipo('evento')">Evento</button>
+            <button class="tab-btn" onclick="abarajarTipo('comercial')">Comercial</button>
+        </div>
+
+        <div class="grid-container">
+            <!-- CASAMENTO -->
+            <div class="card" data-tipo="casamento">
+                <div class="card-header">
+                    <span class="card-title">💍 Casamento</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-casamento" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-casamento" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-casamento" value="22:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-casamento" min="0.5" step="0.5" value="8">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-casamento" min="15" step="15" value="60">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-casamento" checked>
+                            <label for="seg-casamento">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-casamento" checked>
+                            <label for="ter-casamento">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-casamento" checked>
+                            <label for="qua-casamento">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-casamento" checked>
+                            <label for="qui-casamento">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-casamento" checked>
+                            <label for="sex-casamento">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-casamento" checked>
+                            <label for="sab-casamento">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-casamento" checked>
+                            <label for="dom-casamento">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-casamento" min="1" step="1" value="24">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-casamento" min="0" max="100" step="5" value="50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('casamento')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('casamento')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- INDIVIDUAL -->
+            <div class="card" data-tipo="individual">
+                <div class="card-header">
+                    <span class="card-title">👤 Individual</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-individual" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-individual" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-individual" value="22:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-individual" min="0.5" step="0.5" value="2">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-individual" min="15" step="15" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-individual" checked>
+                            <label for="seg-individual">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-individual" checked>
+                            <label for="ter-individual">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-individual" checked>
+                            <label for="qua-individual">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-individual" checked>
+                            <label for="qui-individual">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-individual" checked>
+                            <label for="sex-individual">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-individual" checked>
+                            <label for="sab-individual">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-individual">
+                            <label for="dom-individual">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-individual" min="1" step="1" value="24">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-individual" min="0" max="100" step="5" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('individual')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('individual')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- CASAL -->
+            <div class="card" data-tipo="casal">
+                <div class="card-header">
+                    <span class="card-title">👫 Casal</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-casal" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-casal" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-casal" value="22:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-casal" min="0.5" step="0.5" value="3">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-casal" min="15" step="15" value="45">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-casal" checked>
+                            <label for="seg-casal">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-casal" checked>
+                            <label for="ter-casal">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-casal" checked>
+                            <label for="qua-casal">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-casal" checked>
+                            <label for="qui-casal">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-casal" checked>
+                            <label for="sex-casal">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-casal" checked>
+                            <label for="sab-casal">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-casal">
+                            <label for="dom-casal">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-casal" min="1" step="1" value="24">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-casal" min="0" max="100" step="5" value="40">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('casal')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('casal')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- FAMILIAR -->
+            <div class="card" data-tipo="familiar">
+                <div class="card-header">
+                    <span class="card-title">👨‍👩‍👧‍👦 Familiar</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-familiar" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-familiar" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-familiar" value="22:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-familiar" min="0.5" step="0.5" value="2.5">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-familiar" min="15" step="15" value="45">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-familiar" checked>
+                            <label for="seg-familiar">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-familiar" checked>
+                            <label for="ter-familiar">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-familiar" checked>
+                            <label for="qua-familiar">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-familiar" checked>
+                            <label for="qui-familiar">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-familiar" checked>
+                            <label for="sex-familiar">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-familiar" checked>
+                            <label for="sab-familiar">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-familiar" checked>
+                            <label for="dom-familiar">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-familiar" min="1" step="1" value="24">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-familiar" min="0" max="100" step="5" value="25">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('familiar')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('familiar')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- GESTANTE -->
+            <div class="card" data-tipo="gestante">
+                <div class="card-header">
+                    <span class="card-title">🤰 Gestante</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-gestante" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-gestante" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-gestante" value="18:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-gestante" min="0.5" step="0.5" value="2">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-gestante" min="15" step="15" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-gestante" checked>
+                            <label for="seg-gestante">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-gestante" checked>
+                            <label for="ter-gestante">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-gestante" checked>
+                            <label for="qua-gestante">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-gestante" checked>
+                            <label for="qui-gestante">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-gestante" checked>
+                            <label for="sex-gestante">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-gestante" checked>
+                            <label for="sab-gestante">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-gestante">
+                            <label for="dom-gestante">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-gestante" min="1" step="1" value="24">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-gestante" min="0" max="100" step="5" value="20">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('gestante')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('gestante')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- ANIVERSÁRIO -->
+            <div class="card" data-tipo="aniversario">
+                <div class="card-header">
+                    <span class="card-title">🎂 Aniversário</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-aniversario" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-aniversario" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-aniversario" value="22:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-aniversario" min="0.5" step="0.5" value="1.5">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-aniversario" min="15" step="15" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-aniversario">
+                            <label for="seg-aniversario">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-aniversario">
+                            <label for="ter-aniversario">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-aniversario">
+                            <label for="qua-aniversario">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-aniversario">
+                            <label for="qui-aniversario">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-aniversario" checked>
+                            <label for="sex-aniversario">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-aniversario" checked>
+                            <label for="sab-aniversario">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-aniversario" checked>
+                            <label for="dom-aniversario">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-aniversario" min="1" step="1" value="48">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-aniversario" min="0" max="100" step="5" value="50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('aniversario')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('aniversario')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- EVENTO -->
+            <div class="card" data-tipo="evento">
+                <div class="card-header">
+                    <span class="card-title">🎉 Evento</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-evento" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-evento" value="08:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-evento" value="23:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-evento" min="0.5" step="0.5" value="4">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-evento" min="15" step="15" value="60">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-evento">
+                            <label for="seg-evento">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-evento">
+                            <label for="ter-evento">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-evento">
+                            <label for="qua-evento">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-evento">
+                            <label for="qui-evento">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-evento" checked>
+                            <label for="sex-evento">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-evento" checked>
+                            <label for="sab-evento">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-evento" checked>
+                            <label for="dom-evento">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-evento" min="1" step="1" value="72">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-evento" min="0" max="100" step="5" value="100">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('evento')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('evento')">Resetar</button>
+                </div>
+            </div>
+
+            <!-- COMERCIAL -->
+            <div class="card" data-tipo="comercial">
+                <div class="card-header">
+                    <span class="card-title">📸 Comercial</span>
+                    <span class="card-status">Ativo</span>
+                </div>
+
+                <div id="successMsg-comercial" class="success-message" style="display: none;">✓ Configuração salva!</div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Horário Padrão</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Início</label>
+                            <input type="time" id="inicio-comercial" value="09:00">
+                        </div>
+                        <div>
+                            <label>Fim</label>
+                            <input type="time" id="fim-comercial" value="17:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Duração do Ensaio</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Duração (horas)</label>
+                            <input type="number" id="duracao-comercial" min="0.5" step="0.5" value="4">
+                        </div>
+                        <div>
+                            <label>Intervalo entre (min)</label>
+                            <input type="number" id="intervalo-comercial" min="15" step="15" value="120">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Disponibilidade</div>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="seg-comercial" checked>
+                            <label for="seg-comercial">Segunda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="ter-comercial" checked>
+                            <label for="ter-comercial">Terça</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qua-comercial" checked>
+                            <label for="qua-comercial">Quarta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="qui-comercial" checked>
+                            <label for="qui-comercial">Quinta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sex-comercial" checked>
+                            <label for="sex-comercial">Sexta</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="sab-comercial">
+                            <label for="sab-comercial">Sábado</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dom-comercial">
+                            <label for="dom-comercial">Domingo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="config-section-title">Política de Cancelamento</div>
+                    <div class="config-row">
+                        <div>
+                            <label>Cancelar até (horas antes)</label>
+                            <input type="number" id="cancelamento-comercial" min="1" step="1" value="120">
+                        </div>
+                        <div>
+                            <label>Multa de cancelamento (%)</label>
+                            <input type="number" id="multa-comercial" min="0" max="100" step="5" value="100">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="salvarConfiguracao('comercial')">Salvar</button>
+                    <button class="btn btn-secondary btn-small" onclick="resetarConfiguracao('comercial')">Resetar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sistema de abas
+        function abarajarTipo(tipo) {
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.display = 'none';
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.querySelector(`[data-tipo="${tipo}"]`).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        // Salvar configuração (localStorage para demo, Supabase em produção)
+        function salvarConfiguracao(tipo) {
+            const config = {
+                inicio: document.getElementById(`inicio-${tipo}`).value,
+                fim: document.getElementById(`fim-${tipo}`).value,
+                duracao: parseFloat(document.getElementById(`duracao-${tipo}`).value),
+                intervalo: parseInt(document.getElementById(`intervalo-${tipo}`).value),
+                diasDisponiveis: Array.from(document.querySelectorAll(`input[id^="${tipo}"][id$="-${['seg','ter','qua','qui','sex','sab','dom'].find(d => document.getElementById(`${d}-${tipo}`))}"]:checked`))
+                    .map(cb => cb.id.split('-')[0]),
+                cancelamentoPrazo: parseInt(document.getElementById(`cancelamento-${tipo}`).value),
+                cancelamentoMulta: parseInt(document.getElementById(`multa-${tipo}`).value)
+            };
+
+            // Simplificado para demo
+            localStorage.setItem(`config_${tipo}`, JSON.stringify(config));
+
+            // Mostrar mensagem de sucesso
+            const msg = document.getElementById(`successMsg-${tipo}`);
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        }
+
+        // Resetar configuração
+        function resetarConfiguracao(tipo) {
+            if (confirm('Resetar configurações de ' + tipo + '?')) {
+                localStorage.removeItem(`config_${tipo}`);
+                location.reload();
+            }
+        }
+
+        // Carregar configurações ao iniciar
+        window.addEventListener('DOMContentLoaded', () => {
+            const tipos = ['casamento', 'individual', 'casal', 'familiar', 'gestante', 'aniversario', 'evento', 'comercial'];
+            tipos.forEach(tipo => {
+                const config = localStorage.getItem(`config_${tipo}`);
+                if (config) {
+                    const dados = JSON.parse(config);
+                    document.getElementById(`inicio-${tipo}`).value = dados.inicio;
+                    document.getElementById(`fim-${tipo}`).value = dados.fim;
+                    document.getElementById(`duracao-${tipo}`).value = dados.duracao;
+                    document.getElementById(`intervalo-${tipo}`).value = dados.intervalo;
+                    document.getElementById(`cancelamento-${tipo}`).value = dados.cancelamentoPrazo;
+                    document.getElementById(`multa-${tipo}`).value = dados.cancelamentoMulta;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

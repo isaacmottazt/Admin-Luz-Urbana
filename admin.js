@@ -35,6 +35,7 @@ document.addEventListener(
     }
 
     carregarGaleria();
+    carregarDestaques();
 
 });
 
@@ -56,6 +57,23 @@ const galeria =
 document.getElementById(
     "galeria-admin"
 );
+
+const inputImagemDestaque =
+document.getElementById(
+    "imagemDestaque"
+);
+
+const statusDestaque =
+document.getElementById(
+    "statusDestaque"
+);
+
+const destaqueAdmin =
+document.getElementById(
+    "destaque-admin"
+);
+
+const LIMITE_DESTAQUES = 4;
 
 /* ======================================
    ENVIAR IMAGEM
@@ -590,5 +608,413 @@ async function logout(){
 
     window.location.href =
     "login.html";
+
+}
+
+/* ======================================
+   MOMENTOS CAPTURADOS (DESTAQUES)
+====================================== */
+
+async function enviarImagemDestaque(){
+
+    const arquivos =
+    inputImagemDestaque.files;
+
+    if(arquivos.length === 0){
+        statusDestaque.innerHTML =
+        "Selecione pelo menos 1 imagem.";
+        return;
+    }
+
+    /* CONFERE LIMITE DE 4 */
+
+    const { count, error: erroContagem } = await client
+    .from("destaques")
+    .select("*", { count: "exact", head: true });
+
+    if(erroContagem){
+        console.log(erroContagem);
+        statusDestaque.innerHTML =
+        "Erro ao verificar destaques atuais.";
+        return;
+    }
+
+    const vagasRestantes = LIMITE_DESTAQUES - (count || 0);
+
+    if(vagasRestantes <= 0){
+        statusDestaque.innerHTML =
+        `Limite de ${LIMITE_DESTAQUES} fotos atingido. Exclua uma para adicionar outra.`;
+        return;
+    }
+
+    const arquivosValidos =
+    Array.from(arquivos).slice(0, vagasRestantes);
+
+    if(arquivos.length > vagasRestantes){
+        statusDestaque.innerHTML =
+        `Só há espaço para mais ${vagasRestantes} foto(s). Enviando essa quantidade...`;
+    }else{
+        statusDestaque.innerHTML =
+        "Enviando imagens...";
+    }
+
+    let enviados = 0;
+
+    for(const arquivo of arquivosValidos){
+
+        try{
+
+            if(
+                !arquivo.type.startsWith(
+                    "image/"
+                )
+            ){
+                continue;
+            }
+
+            const extensao =
+            arquivo.name
+            .split(".")
+            .pop();
+
+            const nomeArquivo =
+
+`destaque-${Date.now()}-${Math.floor(
+Math.random() * 100000
+)}.${extensao}`;
+
+            const {
+                error: erroUpload
+            } = await client.storage
+            .from("fotos")
+            .upload(
+                nomeArquivo,
+                arquivo
+            );
+
+            if(erroUpload){
+                console.log(erroUpload);
+                continue;
+            }
+
+            const {
+                data
+            } = client.storage
+            .from("fotos")
+            .getPublicUrl(
+                nomeArquivo
+            );
+
+            const {
+                error: erroBanco
+            } = await client
+            .from("destaques")
+            .insert([
+                {
+                    imagem_url:
+                    data.publicUrl
+                }
+            ]);
+
+            if(erroBanco){
+                console.log(erroBanco);
+                continue;
+            }
+
+            enviados++;
+
+        }catch(err){
+            console.log(err);
+        }
+
+    }
+
+    statusDestaque.innerHTML =
+
+`${enviados} imagem(ns) enviada(s)!`;
+
+    inputImagemDestaque.value = "";
+
+    carregarDestaques();
+
+    if(enviados > 0){
+        setTimeout(fecharModalUploadDestaque, 1200);
+    }
+
+}
+
+function abrirModalUploadDestaque(){
+
+    document
+    .getElementById("modalUploadDestaque")
+    .classList.add("ativo");
+
+}
+
+function fecharModalUploadDestaque(){
+
+    document
+    .getElementById("modalUploadDestaque")
+    .classList.remove("ativo");
+
+    statusDestaque.innerHTML = "";
+    inputImagemDestaque.value = "";
+
+}
+
+function fecharModalUploadDestaqueFora(evento){
+
+    if(evento.target.id === "modalUploadDestaque"){
+        fecharModalUploadDestaque();
+    }
+
+}
+
+async function carregarDestaques(){
+
+    destaqueAdmin.innerHTML =
+    "<p>Carregando...</p>";
+
+    const {
+        data,
+        error
+    } = await client
+    .from("destaques")
+    .select("*")
+    .order("ordem", {
+        ascending:true,
+        nullsFirst:false
+    })
+    .order("id", {
+        ascending:false
+    });
+
+    if(error){
+        console.log(error);
+        destaqueAdmin.innerHTML =
+        "<p>Erro ao carregar.</p>";
+        return;
+    }
+
+    if(!data || data.length === 0){
+        destaqueAdmin.innerHTML =
+        "<p>Nenhuma foto em destaque ainda. Envie até 4 fotos para aparecerem no site.</p>";
+        return;
+    }
+
+    destaqueAdmin.innerHTML = "";
+
+    data.forEach((imagem) => {
+
+        const div = document.createElement("div");
+        div.className = "foto-card";
+        div.setAttribute("data-id", imagem.id);
+        div.setAttribute("draggable", "true");
+
+        div.innerHTML = `
+
+            <div class="foto-arrastar" title="Arraste para reordenar">
+                <span></span><span></span><span></span>
+            </div>
+
+            <div class="foto-wrap foto-wrap--quadrado">
+                <img
+                src="${imagem.imagem_url}"
+                alt="Foto em destaque"
+                loading="lazy">
+            </div>
+
+            <button
+            class="btn-excluir"
+            onclick="abrirModalExcluirDestaque(${imagem.id})">
+            Excluir
+            </button>
+
+        `;
+
+        destaqueAdmin.appendChild(div);
+
+        div.querySelector(".foto-wrap img")
+        .addEventListener("click", () => {
+            abrirLightbox(imagem.imagem_url);
+        });
+
+        ativarArrastarDestaque(div);
+
+    });
+
+    destaquesOrdenados = data;
+
+}
+
+/* ======================================
+   REORDENAR DESTAQUES (arrastar e soltar)
+====================================== */
+
+let destaquesOrdenados = [];
+let itemArrastadoDestaque = null;
+
+function ativarArrastarDestaque(card){
+
+    card.addEventListener("dragstart", () => {
+        itemArrastadoDestaque = card;
+        setTimeout(() => card.classList.add("arrastando"), 0);
+    });
+
+    card.addEventListener("dragend", () => {
+        card.classList.remove("arrastando");
+        itemArrastadoDestaque = null;
+        salvarNovaOrdemDestaque();
+    });
+
+    card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const alvo = e.target.closest(".foto-card");
+        if(!alvo || alvo === itemArrastadoDestaque || alvo.parentNode !== destaqueAdmin) return;
+        trocarPosicaoDestaque(alvo);
+    });
+
+    const alca = card.querySelector(".foto-arrastar");
+
+    alca.addEventListener("touchstart", () => {
+        itemArrastadoDestaque = card;
+        card.classList.add("arrastando");
+    }, { passive: true });
+
+    alca.addEventListener("touchmove", (e) => {
+
+        if(!itemArrastadoDestaque) return;
+        e.preventDefault();
+
+        const toque = e.touches[0];
+
+        itemArrastadoDestaque.style.pointerEvents = "none";
+        const elementoAbaixo = document.elementFromPoint(toque.clientX, toque.clientY);
+        itemArrastadoDestaque.style.pointerEvents = "";
+
+        const alvo = elementoAbaixo ? elementoAbaixo.closest(".foto-card") : null;
+
+        if(alvo && alvo !== itemArrastadoDestaque && alvo.parentNode === destaqueAdmin){
+            trocarPosicaoDestaque(alvo);
+        }
+
+    }, { passive: false });
+
+    alca.addEventListener("touchend", () => {
+
+        if(!itemArrastadoDestaque) return;
+
+        itemArrastadoDestaque.classList.remove("arrastando");
+        itemArrastadoDestaque = null;
+
+        salvarNovaOrdemDestaque();
+
+    });
+
+    alca.addEventListener("touchcancel", () => {
+        if(itemArrastadoDestaque){
+            itemArrastadoDestaque.classList.remove("arrastando");
+        }
+        itemArrastadoDestaque = null;
+    });
+
+}
+
+function trocarPosicaoDestaque(alvo){
+
+    const proximoDoAlvo = alvo.nextElementSibling;
+
+    if(proximoDoAlvo === itemArrastadoDestaque){
+        alvo.parentNode.insertBefore(itemArrastadoDestaque, alvo);
+    }else{
+        const referencia = itemArrastadoDestaque.nextElementSibling;
+        alvo.parentNode.insertBefore(itemArrastadoDestaque, alvo);
+        alvo.parentNode.insertBefore(alvo, referencia);
+    }
+
+}
+
+async function salvarNovaOrdemDestaque(){
+
+    const cards = [...destaqueAdmin.querySelectorAll(".foto-card")];
+
+    const atualizacoes = cards.map((card, i) => ({
+        id: Number(card.getAttribute("data-id")),
+        ordem: i
+    }));
+
+    await Promise.all(
+        atualizacoes.map(item =>
+            client
+            .from("destaques")
+            .update({ ordem: item.ordem })
+            .eq("id", item.id)
+        )
+    );
+
+    destaquesOrdenados = atualizacoes;
+
+}
+
+/* ======================================
+   EXCLUIR DESTAQUE
+====================================== */
+
+let idDestaqueParaExcluir = null;
+
+function abrirModalExcluirDestaque(id){
+
+    idDestaqueParaExcluir = id;
+    document.getElementById("modalExcluir").classList.add("ativo");
+
+    // Reaproveita o modal de exclusão da galeria, mas com callback próprio
+    const botaoConfirmar = document.querySelector("#modalExcluir .btn-confirmar-excluir");
+    botaoConfirmar.setAttribute("onclick", "confirmarExclusaoDestaque()");
+
+}
+
+async function confirmarExclusaoDestaque(){
+
+    if(idDestaqueParaExcluir === null) return;
+
+    const id = idDestaqueParaExcluir;
+    idDestaqueParaExcluir = null;
+    fecharModalExcluir();
+
+    const {
+        data
+    } = await client
+    .from("destaques")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+    if(data){
+
+        const partes =
+        data.imagem_url.split("/");
+
+        const nomeArquivo =
+        partes[
+            partes.length - 1
+        ];
+
+        await client.storage
+        .from("fotos")
+        .remove([
+            nomeArquivo
+        ]);
+    }
+
+    await client
+    .from("destaques")
+    .delete()
+    .eq("id", id);
+
+    // Restaura o botão de exclusão padrão da galeria principal
+    const botaoConfirmar = document.querySelector("#modalExcluir .btn-confirmar-excluir");
+    botaoConfirmar.setAttribute("onclick", "confirmarExclusao()");
+
+    carregarDestaques();
 
 }
