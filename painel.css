@@ -144,6 +144,17 @@ body{
     border-color:rgba(244,67,54,0.4);
 }
 
+.faixa-btn--ativo{
+    background:linear-gradient(135deg, var(--ouro-claro), var(--ouro-escuro));
+    color:#1a1200;
+}
+
+.faixa-btn--ativo:hover{
+    background:linear-gradient(135deg, var(--ouro-claro), var(--ouro-escuro));
+    border-color:transparent;
+    transform:none;
+}
+
 /* ======================================
    CONTEÚDO
 ====================================== */

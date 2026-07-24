@@ -4,62 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuração de Horários — Painel Admin</title>
+    <link rel="stylesheet" href="painel.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: #fff;
-            min-height: 100vh;
-            padding: 20px;
-        }
+        /* ======================================
+           HORÁRIOS — usa painel.css como base
+           (shell, faixa lateral, variáveis de cor)
+        ====================================== */
 
         .container {
             max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #d6a04c;
-        }
-
-        .header p {
-            font-size: 14px;
-            color: #999;
         }
 
         .grid-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 24px;
+            gap: 20px;
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s ease;
+            background: var(--vidro-alt, rgba(22,22,22,0.92));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--borda);
+            border-radius: var(--raio);
+            padding: 22px;
+            transition: all 0.25s ease;
         }
 
         .card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(214, 160, 76, 0.3);
-            transform: translateY(-2px);
+            border-color: var(--borda-hover);
         }
 
         .card-header {
@@ -68,23 +42,23 @@
             justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--borda);
         }
 
         .card-title {
             font-size: 18px;
             font-weight: 600;
-            color: #d6a04c;
+            color: var(--ouro-claro);
         }
 
         .card-status {
             display: inline-block;
             padding: 4px 12px;
-            background: rgba(214, 160, 76, 0.2);
+            background: rgba(214, 160, 76, 0.15);
             border-radius: 50px;
             font-size: 12px;
             font-weight: 500;
-            color: #d6a04c;
+            color: var(--ouro-claro);
         }
 
         .config-row {
@@ -110,22 +84,21 @@
         select {
             width: 100%;
             padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--borda);
+            border-radius: var(--raio-sm);
             color: #fff;
             font-family: 'Poppins', sans-serif;
             font-size: 14px;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
 
         input[type="time"]:focus,
         input[type="number"]:focus,
         select:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.12);
-            border-color: #d6a04c;
-            box-shadow: 0 0 10px rgba(214, 160, 76, 0.2);
+            background: rgba(214, 160, 76, 0.06);
+            border-color: var(--borda-hover);
         }
 
         input[type="time"]::placeholder {
@@ -133,8 +106,8 @@
         }
 
         .horarios-lista {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--raio-sm);
             padding: 12px;
             margin-bottom: 16px;
         }
@@ -144,8 +117,8 @@
             align-items: center;
             justify-content: space-between;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
             margin-bottom: 8px;
             font-size: 14px;
         }
@@ -156,22 +129,22 @@
 
         .horario-item span {
             font-weight: 500;
-            color: #d6a04c;
+            color: var(--ouro-claro);
         }
 
         .horario-item button {
             padding: 4px 8px;
-            background: rgba(255, 67, 67, 0.2);
-            border: 1px solid rgba(255, 67, 67, 0.5);
-            color: #ff4343;
-            border-radius: 4px;
+            background: rgba(244, 67, 54, 0.15);
+            border: 1px solid rgba(244, 67, 54, 0.4);
+            color: #ff8a80;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
 
         .horario-item button:hover {
-            background: rgba(255, 67, 67, 0.3);
+            background: rgba(244, 67, 54, 0.25);
         }
 
         .checkbox-group {
@@ -191,7 +164,7 @@
             width: 16px;
             height: 16px;
             cursor: pointer;
-            accent-color: #d6a04c;
+            accent-color: var(--ouro);
         }
 
         .checkbox-item label {
@@ -212,22 +185,22 @@
             flex: 1;
             padding: 12px;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--raio-sm);
             font-family: 'Poppins', sans-serif;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             font-size: 14px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #d6a04c 0%, #c9933d 100%);
-            color: #000;
+            background: linear-gradient(135deg, var(--ouro-claro), var(--ouro-escuro));
+            color: #1a1200;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(214, 160, 76, 0.3);
+            box-shadow: 0 10px 24px rgba(214, 160, 76, 0.3);
         }
 
         .btn-primary:active {
@@ -235,14 +208,14 @@
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ccc;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.04);
+            color: #ddd;
+            border: 1px solid var(--borda);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--borda-hover);
         }
 
         .btn-small {
@@ -252,7 +225,7 @@
 
         .config-section {
             background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
+            border-radius: var(--raio-sm);
             padding: 16px;
             margin-bottom: 16px;
         }
@@ -260,17 +233,17 @@
         .config-section-title {
             font-size: 12px;
             font-weight: 600;
-            color: #d6a04c;
+            color: var(--ouro-claro);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 12px;
         }
 
         .info-box {
-            background: rgba(214, 160, 76, 0.1);
-            border-left: 3px solid #d6a04c;
+            background: rgba(214, 160, 76, 0.08);
+            border-left: 3px solid var(--ouro);
             padding: 12px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 12px;
             color: #ddd;
             margin-bottom: 16px;
@@ -278,8 +251,8 @@
 
         .badge-novo {
             display: inline-block;
-            background: rgba(52, 211, 153, 0.2);
-            color: #34d399;
+            background: rgba(76, 175, 80, 0.18);
+            color: #4caf50;
             padding: 2px 8px;
             border-radius: 3px;
             font-size: 11px;
@@ -291,7 +264,7 @@
             display: flex;
             gap: 4px;
             margin-bottom: 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--borda);
             overflow-x: auto;
         }
 
@@ -299,19 +272,19 @@
             padding: 12px 16px;
             background: transparent;
             border: none;
-            color: #999;
+            color: var(--texto-mudo);
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             font-weight: 500;
             font-size: 14px;
             border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
             white-space: nowrap;
         }
 
         .tab-btn.active {
-            color: #d6a04c;
-            border-bottom-color: #d6a04c;
+            color: var(--ouro-claro);
+            border-bottom-color: var(--ouro);
         }
 
         .tab-content {
@@ -323,11 +296,11 @@
         }
 
         .success-message {
-            background: rgba(52, 211, 153, 0.15);
-            border: 1px solid rgba(52, 211, 153, 0.3);
-            color: #34d399;
+            background: rgba(76, 175, 80, 0.15);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: #8fd39a;
             padding: 12px 16px;
-            border-radius: 8px;
+            border-radius: var(--raio-sm);
             margin-bottom: 16px;
             animation: slideDown 0.3s ease;
         }
@@ -351,20 +324,33 @@
             .config-row {
                 grid-template-columns: 1fr;
             }
-
-            .header h1 {
-                font-size: 24px;
-            }
         }
     </style>
 </head>
 <body>
+
+<div class="app-shell">
+
+<!-- FAIXA LATERAL -->
+<aside class="faixa">
+    <div class="faixa-logo"><img src="img/logo.png" alt="Logo"></div>
+    <div class="faixa-linha"></div>
+    <a class="faixa-btn" href="painel.html" title="Painel">📊</a>
+    <a class="faixa-btn" href="index.html" title="Galeria">🖼️</a>
+    <a class="faixa-btn" href="admin-galerias.html" title="Galerias dos Clientes">📸</a>
+    <a class="faixa-btn faixa-btn--ativo" href="horarios-painel.html" title="Horários e Cancelamento">⏱️</a>
+    <div class="faixa-espaco"></div>
+    <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair">⎋</button>
+</aside>
+
+<div class="conteudo">
     <div class="container">
-        <div class="header">
-            <a href="painel.html" style="color:inherit; text-decoration:none; opacity:0.7; font-size:14px;">← Voltar ao painel</a>
-            <h1>⏰ Configuração de Horários</h1>
-            <p>Defina os horários disponíveis para cada tipo de ensaio</p>
-        </div>
+        <header class="cabecalho">
+            <div class="cabecalho-titulo">
+                <h1>Configuração de Horários</h1>
+                <p>Defina os horários disponíveis para cada tipo de ensaio</p>
+            </div>
+        </header>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="abarajarTipo('casamento')">Casamento</button>
@@ -1107,8 +1093,26 @@
             </div>
         </div>
     </div>
+</div><!-- /.conteudo -->
 
+</div><!-- /.app-shell -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        const client = supabase.createClient(
+            "https://tbwmsgztpyyratambgqs.supabase.co",
+            "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd"
+        );
+
+        async function logout() {
+            try {
+                await client.auth.signOut();
+            } catch (e) {
+                console.error('Erro ao logout:', e);
+            }
+            window.location.href = 'login.html';
+        }
+
         // Sistema de abas
         function abarajarTipo(tipo) {
             document.querySelectorAll('.card').forEach(card => {
