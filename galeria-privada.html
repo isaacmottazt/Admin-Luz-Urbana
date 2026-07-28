@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeria Privada — Motazt Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #000000;
+            --panel: #0c0c0c;
+            --panel-light: #161513;
+            --hairline: rgba(224, 183, 63, 0.16);
+            --gold: #e0b73f;
+            --gold-light: #f4d374;
+            --gold-dim: rgba(224, 183, 63, 0.12);
+            --ivory: #f2efe6;
+            --muted: #8c8a83;
+            --danger: #ff6b6b;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background:
+                radial-gradient(ellipse 70% 45% at 50% -8%, rgba(224, 183, 63, 0.07), transparent 60%),
+                var(--black);
+            color: var(--ivory);
+            min-height: 100vh;
+        }
+
+        /* ===== TELA DE CARREGAMENTO ===== */
+        .screen {
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--hairline);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== TELA DE LOGIN ===== */
+        .login-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: linear-gradient(180deg, var(--panel-light), var(--panel));
+            border: 1px solid var(--hairline);
+            border-radius: 4px;
+            padding: 60px 48px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+        }
+
+        .login-card h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .login-card p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .login-form input {
+            background: var(--panel);
+            border: 1px solid var(--hairline);
+            border-radius: 3px;
+            padding: 12px 14px;
+            font-family: 'Poppins', sans-serif;
+            color: var(--ivory);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .login-form input::placeholder {
+            color: var(--muted);
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(224, 183, 63, 0.1);
+        }
+
+        .login-form button {
+            background: var(--gold);
+            border: none;
+            border-radius: 3px;
+            padding: 12px 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.3px;
+        }
+
+        .login-form button:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+        }
+
+        .login-form button:active {
+            transform: translateY(0);
+        }
+
+        .login-form button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-erro {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 3px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--danger);
+            display: none;
+            animation: slideDown 0.25s;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== TELA DE ERRO ===== */
+        .error-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-card {
+            background: linear-gradient(180deg, var(--panel-light), var(--panel));
+            border: 1px solid var(--hairline);
+            border-radius: 4px;
+            padding: 48px 44px 36px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+            text-align: center;
+        }
+
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .error-card h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .error-card p {
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .btn-voltar {
+            display: inline-block;
+            background: var(--gold);
+            color: #000;
+            text-decoration: none;
+            padding: 10px 24px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.25s;
+        }
+
+        .btn-voltar:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+        }
+
+        /* ===== TELA DE GALERIA ===== */
+        .galeria-screen {
+            display: none;
+            padding: 48px 5% 60px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .galeria-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            gap: 24px;
+        }
+
+        .galeria-header h1 {
+            font-size: 36px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .galeria-header-info {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .galeria-controles {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .filtro-btn,
+        .btn-acao {
+            background: var(--panel-light);
+            border: 1px solid var(--hairline);
+            border-radius: 3px;
+            padding: 10px 16px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ivory);
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.3px;
+        }
+
+        .filtro-btn:hover,
+        .btn-acao:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .filtro-btn.ativo {
+            background: var(--gold);
+            color: #000;
+            border-color: var(--gold);
+        }
+
+        .btn-acao.destaque {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .btn-acao.destaque:hover {
+            background: rgba(224, 183, 63, 0.2);
+        }
+
+        .contador-selecao {
+            font-size: 12px;
+            color: var(--gold);
+            font-weight: 500;
+            display: none;
+        }
+
+        .contador-selecao.visivel {
+            display: block;
+        }
+
+        .galeria-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .galeria-grid.modo-selecao {
+            opacity: 0.7;
+        }
+
+        .foto-card {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.25s;
+            border: 1px solid var(--hairline);
+            background: var(--panel);
+        }
+
+        .foto-card:hover {
+            border-color: var(--gold);
+            transform: scale(1.02);
+        }
+
+        .foto-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .foto-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .foto-card.selecionada {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px var(--gold);
+        }
+
+        .btn-favoritar {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--ivory);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            z-index: 2;
+        }
+
+        .btn-favoritar:hover {
+            background: rgba(224, 183, 63, 0.8);
+            color: #000;
+        }
+
+        .btn-favoritar.favorita {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .check-selecao {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--hairline);
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--gold);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            opacity: 0;
+            z-index: 3;
+        }
+
+        .galeria-grid.modo-selecao .check-selecao {
+            opacity: 1;
+        }
+
+        .foto-card.selecionada .check-selecao {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: #000;
+        }
+
+        .foto-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+
+        .foto-card:hover .foto-overlay {
+            opacity: 1;
+        }
+
+        .btn-baixar-foto,
+        .btn-ampliar {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gold);
+            color: #000;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+
+        .btn-baixar-foto:hover,
+        .btn-ampliar:hover {
+            background: var(--gold-light);
+            transform: scale(1.1);
+        }
+
+        .mensagem-vazia {
+            text-align: center;
+            padding: 60px 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+
+        .mensagem-vazia.visivel {
+            opacity: 1;
+        }
+
+        .mensagem-vazia h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--muted);
+        }
+
+        .mensagem-vazia p {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-visualizacao {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-visualizacao.ativa {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-conteudo {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .modal-botoes {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .btn-modal {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gold);
+            color: #000;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+
+        .btn-modal:hover {
+            background: var(--gold-light);
+            transform: scale(1.1);
+        }
+
+        .btn-fechar-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gold);
+            color: #000;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            z-index: 11;
+        }
+
+        .btn-fechar-modal:hover {
+            background: var(--gold-light);
+            transform: scale(1.1);
+        }
+
+        .modal-info {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            font-size: 12px;
+            color: var(--muted);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border-radius: 2px;
+            z-index: 10;
+        }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width: 768px) {
+            .galeria-screen {
+                padding: 24px 5% 40px;
+            }
+
+            .galeria-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .galeria-header h1 {
+                font-size: 28px;
+            }
+
+            .galeria-controles {
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .galeria-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 12px;
+            }
+
+            .filtro-btn,
+            .btn-acao {
+                flex: 1;
+                min-width: 140px;
+                font-size: 11px;
+            }
+
+            .btn-modal {
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
+            }
+
+            .btn-fechar-modal {
+                width: 44px;
+                height: 44px;
+            }
+
+            .login-card {
+                padding: 40px 32px;
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE CARREGAMENTO -->
+    <div class="loading-screen screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Carregando galeria...</div>
+    </div>
+
+    <!-- TELA DE ERRO -->
+    <div class="error-screen screen" id="errorScreen">
+        <div class="error-card">
+            <div class="error-icon">⚠</div>
+            <h1 id="errorTitle">Galeria não encontrada</h1>
+            <p id="errorMessage">A galeria que você está tentando acessar não existe ou expirou.</p>
+            <a href="https://motazt-studio.vercel.app/" class="btn-voltar">Voltar ao site</a>
+        </div>
+    </div>
+
+    <!-- TELA DE GALERIA -->
+    <div class="galeria-screen" id="galeriaScreen">
+        <div class="galeria-header">
+            <div>
+                <h1 id="galeriaNome">Suas Fotos</h1>
+                <div class="galeria-header-info">
+                    <span>Total: <strong id="totalFotos">0</strong> fotos</span>
+                    <span>Favoritas: <strong id="totalFavoritas">0</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="galeria-controles">
+            <button class="filtro-btn ativo" data-filtro="todas" onclick="filtrarFotos('todas', this)">
+                Todas
+            </button>
+            <button class="filtro-btn" data-filtro="favoritas" onclick="filtrarFotos('favoritas', this)">
+                Favoritas
+            </button>
+            <button class="btn-acao" id="btnModoSelecao" onclick="alternarModoSelecao()">
+                Selecionar fotos
+            </button>
+            <button class="btn-acao destaque" id="btnBaixarSelecao" onclick="baixarSelecionadas()">
+                ⬇ Baixar selecionadas
+            </button>
+            <span class="contador-selecao" id="contadorSelecao"></span>
+        </div>
+
+        <div class="galeria-grid" id="galeriaGrid"></div>
+        <div class="mensagem-vazia" id="mensagemVazia">
+            <h2>Nenhuma foto</h2>
+            <p>As fotos estarão disponíveis em breve.</p>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZAÇÃO -->
+    <div class="modal-visualizacao" id="modalVisualizacao">
+        <div class="modal-conteudo">
+            <button class="btn-fechar-modal" onclick="fecharModal()">✕</button>
+            <img id="modalImg" src="" alt="Foto ampliada" class="modal-img">
+            <div class="modal-botoes">
+                <button class="btn-modal" onclick="fotoAnterior()" title="Anterior">‹</button>
+                <button class="btn-modal" onclick="proximaFoto()" title="Próxima">›</button>
+                <button class="btn-modal" onclick="baixarFotoAtual()" title="Baixar">⬇</button>
+            </div>
+            <div class="modal-info" id="modalInfo"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/galerias-sistema-completo.js"></script>
+    <script>
+        // ===== VARIÁVEIS GLOBAIS =====
+        const SUPABASE_URL = "https://tbwmsgztpyyratambgqs.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let galeriaId = null;
+        let senhaValidada = false;
+        let todasFotos = [];
+        let fotosExibidas = [];
+        let filtroAtual = 'todas';
+        let fotoAtualModal = 0;
+        let modoSelecao = false;
+        const fotosSelecionadas = new Set();
+
+        // ===== EXTRAIR ID DA URL =====
+        function extrairIdDaUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // ===== INICIALIZAR =====
+        async function inicializar() {
+            galeriaId = extrairIdDaUrl();
+
+            if (!galeriaId) {
+                mostrarErro('ID inválido', 'O link da galeria parece estar incorreto ou incompleto.');
+                return;
+            }
+
+            try {
+                // Validar se galeria existe (sem mostrar fotos ainda)
+                const galeria = await validarGaleriaExiste(galeriaId);
+                if (!galeria) {
+                    mostrarErro('Galeria não encontrada', 'A galeria que você está tentando acessar não existe ou expirou.');
+                    return;
+                }
+
+                // ✅ Acesso somente com o ID: carrega a galeria direto, sem senha
+                senhaValidada = true;
+                await carregarGaleria();
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('galeriaScreen').style.display = 'block';
+
+            } catch (erro) {
+                console.error('Erro na inicialização:', erro);
+                mostrarErro('Erro ao carregar', 'Ocorreu um problema ao carregar a galeria. Tente novamente.');
+            }
+        }
+
+        // ===== VALIDAR SE GALERIA EXISTE =====
+        async function validarGaleriaExiste(id) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('galerias')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error || !data) return null;
+
+                // Verificar expiração
+                if (data.data_expiracao && new Date() > new Date(data.data_expiracao)) {
+                    return null;
+                }
+
+                // Verificar status
+                if (data.status !== 'ativa') {
+                    return null;
+                }
+
+                return data;
+            } catch (erro) {
+                console.error('Erro ao validar galeria:', erro);
+                return null;
+            }
+        }
+
+        // ===== MOSTRAR ERRO =====
+        function mostrarErro(titulo, mensagem) {
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('errorScreen').style.display = 'flex';
+            document.getElementById('errorTitle').textContent = titulo;
+            document.getElementById('errorMessage').textContent = mensagem;
+        }
+
+        // ===== CARREGAR GALERIA =====
+        async function carregarGaleria() {
+            try {
+                const { data: fotos, error } = await supabaseClient
+                    .from('fotos')
+                    .select('*')
+                    .eq('galeria_id', galeriaId)
+                    .order('posicao', { ascending: true });
+
+                if (error) throw error;
+
+                todasFotos = fotos || [];
+                
+                // Atualizar contadores
+                document.getElementById('totalFotos').textContent = todasFotos.length;
+                const favoritas = todasFotos.filter(f => f.favorita).length;
+                document.getElementById('totalFavoritas').textContent = favoritas;
+
+                // Mostrar todas
+                filtrarFotos('todas');
+
+            } catch (erro) {
+                console.error('Erro ao carregar galeria:', erro);
+                throw erro;
+            }
+        }
+
+        // ===== FILTRAR FOTOS =====
+        function filtrarFotos(tipo, botaoClicado) {
+            filtroAtual = tipo;
+
+            // Atualizar botões
+            document.querySelectorAll('.filtro-btn').forEach(btn => btn.classList.remove('ativo'));
+
+            const btnAlvo = botaoClicado || document.querySelector(`.filtro-btn[data-filtro="${tipo}"]`);
+            if (btnAlvo) btnAlvo.classList.add('ativo');
+
+            // Filtrar
+            if (tipo === 'favoritas') {
+                fotosExibidas = todasFotos.filter(f => f.favorita);
+            } else {
+                fotosExibidas = todasFotos;
+            }
+
+            renderizarGaleria();
+        }
+
+        // ===== RENDERIZAR GRID =====
+        function renderizarGaleria() {
+            const grid = document.getElementById('galeriaGrid');
+            const vazio = document.getElementById('mensagemVazia');
+
+            if (fotosExibidas.length === 0) {
+                grid.innerHTML = '';
+                vazio.classList.add('visivel');
+                return;
+            }
+
+            vazio.classList.remove('visivel');
+
+            grid.innerHTML = fotosExibidas.map((foto, idx) => `
+                <div class="foto-card ${fotosSelecionadas.has(foto.id) ? 'selecionada' : ''}" onclick="cliqueNoCard(event, ${idx})">
+                    <img src="${foto.arquivo_preview}" alt="Foto ${idx + 1}" loading="lazy" oncontextmenu="return false" draggable="false">
+                    <button class="btn-favoritar ${foto.favorita ? 'favorita' : ''}" 
+                            onclick="toggleFavorita(event, '${foto.id}', ${foto.favorita})" title="Favoritar">
+                        ${foto.favorita ? '★' : '☆'}
+                    </button>
+                    <div class="check-selecao" onclick="alternarSelecaoFoto(event, '${foto.id}')">✓</div>
+                    <div class="foto-overlay">
+                        <button class="btn-baixar-foto" onclick="baixarFoto(event, '${foto.arquivo_full}', ${idx})" title="Baixar foto">⬇</button>
+                        <button class="btn-ampliar" onclick="abrirModal(${idx})">⤢</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== MODO DE SELEÇÃO MÚLTIPLA =====
+        function alternarModoSelecao() {
+            modoSelecao = !modoSelecao;
+            fotosSelecionadas.clear();
+
+            const grid = document.getElementById('galeriaGrid');
+            const btn = document.getElementById('btnModoSelecao');
+
+            grid.classList.toggle('modo-selecao', modoSelecao);
+            btn.classList.toggle('ativo', modoSelecao);
+            btn.textContent = modoSelecao ? '✕ Cancelar seleção' : 'Selecionar fotos';
+
+            atualizarBarraSelecao();
+            renderizarGaleria();
+        }
+
+        function cliqueNoCard(event, idx) {
+            if (modoSelecao) {
+                const foto = fotosExibidas[idx];
+                alternarSelecaoFoto(event, foto.id);
+            } else {
+                abrirModal(idx);
+            }
+        }
+
+        function alternarSelecaoFoto(event, fotoId) {
+            event.stopPropagation();
+            if (fotosSelecionadas.has(fotoId)) {
+                fotosSelecionadas.delete(fotoId);
+            } else {
+                fotosSelecionadas.add(fotoId);
+            }
+            atualizarBarraSelecao();
+            renderizarGaleria();
+        }
+
+        function atualizarBarraSelecao() {
+            const contador = document.getElementById('contadorSelecao');
+            const btnBaixar = document.getElementById('btnBaixarSelecao');
+            const total = fotosSelecionadas.size;
+
+            if (modoSelecao && total > 0) {
+                contador.textContent = `${total} selecionada${total > 1 ? 's' : ''}`;
+                contador.classList.add('visivel');
+                btnBaixar.classList.add('visivel');
+            } else {
+                contador.textContent = '';
+                contador.classList.remove('visivel');
+                btnBaixar.classList.remove('visivel');
+            }
+        }
+
+        // ===== DOWNLOAD =====
+        async function baixarImagem(url, nomeArquivo) {
+            try {
+                const resposta = await fetch(url);
+                const blob = await resposta.blob();
+                const urlBlob = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = urlBlob;
+                link.download = nomeArquivo;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(urlBlob);
+            } catch (erro) {
+                console.error('Erro ao baixar imagem:', erro);
+                window.open(url, '_blank', 'noopener');
+            }
+        }
+
+        function baixarFoto(event, urlFull, idx) {
+            event.stopPropagation();
+            baixarImagem(urlFull, `motazt-studio-foto-${idx + 1}.jpg`);
+        }
+
+        function baixarFotoAtual() {
+            const foto = fotosExibidas[fotoAtualModal];
+            baixarImagem(foto.arquivo_full, `motazt-studio-foto-${fotoAtualModal + 1}.jpg`);
+        }
+
+        async function baixarSelecionadas() {
+            const fotos = todasFotos.filter(f => fotosSelecionadas.has(f.id));
+            if (fotos.length === 0) return;
+
+            for (let i = 0; i < fotos.length; i++) {
+                await baixarImagem(fotos[i].arquivo_full, `motazt-studio-foto-${i + 1}.jpg`);
+                await new Promise(res => setTimeout(res, 400));
+            }
+        }
+
+        // ===== FAVORITA =====
+        async function toggleFavorita(event, fotoId, jEhFavorita) {
+            event.stopPropagation();
+
+            const nova = !jEhFavorita;
+            const sucesso = await GaleriaPrivada.marcarFavorita(fotoId, nova);
+
+            if (sucesso) {
+                const foto = todasFotos.find(f => f.id === fotoId);
+                foto.favorita = nova;
+
+                if (filtroAtual === 'todas') {
+                    renderizarGaleria();
+                } else {
+                    filtrarFotos('favoritas');
+                }
+
+                const favoritas = todasFotos.filter(f => f.favorita).length;
+                document.getElementById('totalFavoritas').textContent = favoritas;
+            }
+        }
+
+        // ===== MODAL =====
+        function abrirModal(indice) {
+            fotoAtualModal = indice;
+            const modal = document.getElementById('modalVisualizacao');
+            const img = document.getElementById('modalImg');
+            img.src = fotosExibidas[indice].arquivo_full;
+            const info = document.getElementById('modalInfo');
+            info.textContent = `${indice + 1} de ${fotosExibidas.length}`;
+            modal.classList.add('ativa');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalVisualizacao').classList.remove('ativa');
+        }
+
+        function proximaFoto() {
+            fotoAtualModal = (fotoAtualModal + 1) % fotosExibidas.length;
+            document.getElementById('modalImg').src = fotosExibidas[fotoAtualModal].arquivo_full;
+            const info = document.getElementById('modalInfo');
+            info.textContent = `${fotoAtualModal + 1} de ${fotosExibidas.length}`;
+        }
+
+        function fotoAnterior() {
+            fotoAtualModal = (fotoAtualModal - 1 + fotosExibidas.length) % fotosExibidas.length;
+            document.getElementById('modalImg').src = fotosExibidas[fotoAtualModal].arquivo_full;
+            const info = document.getElementById('modalInfo');
+            info.textContent = `${fotoAtualModal + 1} de ${fotosExibidas.length}`;
+        }
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') fecharModal();
+            if (e.key === 'ArrowRight') proximaFoto();
+            if (e.key === 'ArrowLeft') fotoAnterior();
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+            }
+        });
+
+        // ===== INICIAR =====
+        window.addEventListener('load', inicializar);
+    </script>
+
+</body>
+</html>

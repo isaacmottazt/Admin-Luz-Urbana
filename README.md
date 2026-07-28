@@ -1,226 +1,406 @@
-# 📊 Painel Admin — Motazt Studio
+# 🤖 Motazt Studio — Chatbot Inteligente v2.0
 
-Painel de gerenciamento completo para o Motazt Studio, permitindo controlar agendamentos de ensaios fotográficos e gerenciar a galeria de fotos do site público.
+## 📦 O que foi atualizado?
 
----
+Este pacote contém a versão **2.0** do chatbot do Motazt Studio com as seguintes melhorias:
 
-## 🚀 Acesso
+### ✨ Principais Mudanças
 
-**URL:** `https://fenda.isaacmota1007.workers.dev/admin` (ou seu domínio)
+✅ **Inteligência Avançada**
+- Motor de intenções que reconhece múltiplos contextos
+- Palavras-chave expandidas para melhor detecção de comandos
+- Respostas contextuais e personalizadas
 
-### Login
-- Acesse `login.html`
-- Faça login com suas credenciais de e-mail e senha (autenticado via Supabase)
-- Serão redirecionado automaticamente para `painel.html` se a sessão for válida
+✅ **Agendamento Completo no Chat**
+- Cliente pode agendar SEM sair do chat
+- Coleta dados: Nome → Telefone → Tipo → Data → Horário
+- Integração direta com banco de dados (Supabase)
 
----
+✅ **Email Removido**
+- ❌ Campo de email foi removido do fluxo de agendamento
+- ✅ Mantém apenas dados essenciais
 
-## 📋 Funcionalidades Principais
+✅ **Sugestão Inteligente de Horários**
+- Consulta disponibilidade real em tempo real
+- Mostra apenas horários realmente livres
+- Adapta conforme tipo de ensaio escolhido
 
-### 1️⃣ **Painel de Agendamentos** (`painel.html`)
-
-Acompanhamento em tempo real de todos os ensaios agendados.
-
-#### **Cards de Status**
-- **Total:** quantidade total de agendamentos no banco
-- **Aceitos:** quantos estão em andamento (aceitos)
-- **Clientes:** total de clientes com agendamento
-
-#### **Gráfico Mensal**
-- Exibe os últimos 6 meses de agendamentos
-- Mostra variação percentual entre mês atual e anterior
-- Mês atual destacado em ouro
-
-#### **Calendário Interativo**
-- Visualize agendamentos por data
-- Clique em um dia para ver os detalhes dos ensaios daquele dia
-- Navegue pelos meses com as setas
-
-#### **Listas de Status**
-Clique no título de cada seção para expandir/recolher.
-
-**Pendentes** 🟠
-- Agendamentos não aceitos ainda
-- Botões disponíveis:
-  - **Pendente:** manter no estado pendente
-  - **Aceitar (Andamento):** aceitar o ensaio
-  - **Encerrar:** finalizar sem aceitar
-  - **Excluir:** remover agendamento
-
-**Em Andamento** 🔵
-- Ensaios já aceitos e confirmados
-- Mesmos botões da seção Pendentes
-
-**Ensaios Finalizados** 🟢
-- Agendamentos já realizados ou encerrados
-- Status automático: quando passa a data, qualquer agendamento (pendente ou em andamento) vira "Finalizado" automaticamente
-- Botões disponíveis:
-  - **Reabrir (Andamento):** só aparece se a data ainda não passou (ensaios futuros)
-  - **Excluir:** remover agendamento
-
-#### **Botão "Ver mais"**
-- `Ver todos organizados por data` → modal com todos os agendamentos agrupados por data
+✅ **Menu Contextual**
+- Botões sugestivos mudam conforme a conversa
+- Guia o cliente para próxima ação lógica
 
 ---
 
-### 2️⃣ **Gerenciador de Galeria** (`admin.html`)
+## 🚀 Como Começar
 
-Upload e gerenciamento de fotos do portfólio do estúdio.
-
-#### **Botão de Upload** 📤
-- Ícone na barra lateral esquerda (próximo ao ícone de gráfico)
-- Abre um modal centralizado para envio de imagens
-
-#### **Como Enviar Fotos**
-1. Clique no botão 📤 na barra lateral
-2. Clique em **"Escolher arquivos"** ou arraste as imagens
-3. Selecione uma ou múltiplas fotos (formatos: JPG, PNG, WebP, etc)
-4. Clique em **"📤 Enviar Imagens"**
-5. Aguarde a mensagem de sucesso
-6. O modal fecha automaticamente e a galeria atualiza
-
-#### **Galeria de Fotos**
-- Exibe todas as fotos publicadas no portfólio
-- Cada foto tem um botão **"Excluir"** (vermelho)
-- Clique para remover a imagem do banco e do storage
-
----
-
-## 🔄 **Fluxo de um Agendamento**
+### 1. Arquivos Novos/Alterados
 
 ```
-Novo Agendamento (Formulário Site)
-           ↓
-    PENDENTE 🟠
-      (não aceito)
-           ↓
-   Pendente / Aceitar / Encerrar / Excluir
-           ↓
-EM ANDAMENTO 🔵      ou      FINALIZADO 🟢
-(aceito, confirmado)    (encerrado manual ou data passou)
-           ↓
-  Reabrir* / Excluir
+📁 Motazt Studio/
+├── 📄 index.html (ATUALIZADO - novo script do chatbot)
+├── 📄 GUIA-CHATBOT-V2.md (NOVO - guia completo)
+├── 📄 README.md (NOVO - este arquivo)
+└── 📁 js/
+    └── 📄 chatbot-inteligente.js (NOVO - chatbot v2.0)
 ```
 
-*Reabrir só aparece se a data ainda não passou
+### 2. Instalação
+
+1. **Substitua os arquivos** do seu projeto pelos arquivos atualizados
+2. **Não precisa alterar nada** no Supabase (usa mesma configuração)
+3. **Pronto!** O chat já funciona com a nova inteligência
+
+### 3. Testar
+
+1. Abra seu site
+2. Clique no botão de chat (💬)
+3. Escreva: "Oi! Quanto custa um ensaio?"
+4. O bot deve entender e responder com valores
 
 ---
 
-## 🗄️ **Backend & Banco de Dados**
+## 🎯 Comandos Que o Chat Entende
 
-### Supabase
-- **Projeto ID:** `ublmmwatrqvthbcmnrps`
-- **URL:** `https://tbwmsgztpyyratambgqs.supabase.co`
-
-### Tabelas Usadas
-
-**`agendamentos`** — Ensaios agendados
-- `id` (PK, auto)
-- `nome` (text)
-- `email` (text)
-- `telefone` (text)
-- `ensaio` (text) — tipo de ensaio
-- `data` (date)
-- `horario` (time)
-- `mensagem` (text)
-- `status` (text) — `pendente` | `andamento` | `finalizado` | `concluido`
-
-**`galeria`** — Fotos publicadas
-- `id` (PK, auto)
-- `imagem_url` (text) — URL pública do Storage
-
-### Storage
-**Bucket:** `fotos`
-- Armazena imagens do portfólio
-- Acesso público (URLs retornadas são públicas)
-
----
-
-## 🔐 **Autenticação & Segurança**
-
-- Autenticação via **Supabase Auth** (email + senha)
-- **RLS (Row Level Security)** ativa nas tabelas
-- Sessão verificada no carregamento de cada página
-- Se não autenticado, redireciona automaticamente para `login.html`
-
----
-
-## 📱 **Responsividade**
-
-O painel é totalmente responsivo e funciona bem em:
-- Desktop (recomendado)
-- Tablet
-- Celular (via Acode ou navegador)
-
----
-
-## 🎨 **Design & Tema**
-
-- **Cores:** Ouro (primária), azul, laranja, verde (status)
-- **Tipografia:** Poppins (Google Fonts)
-- **Efeito vidro:** Cards com backdrop blur e transparência
-- **Animações:** Suaves (0.2s–0.25s)
-
----
-
-## 🐛 **Troubleshooting**
-
-### Agendamentos não aparecem
-- Verifique conexão com Supabase
-- Confirme que a tabela `agendamentos` tem registros
-- Cheque RLS policies (devem permitir SELECT)
-
-### Fotos não fazem upload
-- Verificar se o bucket `fotos` existe e é público
-- Confirmar permissões de Storage no Supabase
-- Tentar em outro navegador ou limpar cache
-
-### Login não funciona
-- Confirmação de email ativa? Verifique no Supabase Auth settings
-- Usuário criado manualmente? Vai precisar de um invite link ou ativar sem confirmação
-
-### Modal de upload não aparece
-- Verificar console do navegador (F12) para erros JS
-- Tentar recarregar a página
-
----
-
-## 📝 **Arquivos Principais**
-
+### Simples (Uma Palavra)
 ```
-LB-admin/
-├── index.html           # Página inicial (redirecionada)
-├── login.html           # Login de autenticação
-├── painel.html          # Painel de agendamentos
-├── admin.html           # Gerenciador de galeria
-├── painel.js            # Lógica de agendamentos
-├── admin.js             # Lógica de upload/galeria
-├── script.js            # Autenticação & logout
-├── painel.css           # Estilos do painel
-├── admin.css            # Estilos da galeria
-├── login.css            # Estilos de login
-├── style.css            # Estilos globais
-└── img/                 # Assets (logo, ícones)
+"oi" → Saudação
+"menu" → Mostra menu
+"valores" → Mostra valores
+"galeria" → Abre galeria
+```
+
+### Específicos
+```
+"Quero agendar" → Inicia agendamento
+"Quais datas estão disponíveis?" → Lista datas livres
+"Quais horários para 15/08?" → Mostra horários do dia
+"Quanto custa um casamento?" → Valor específico
+```
+
+### Sobre Políticas
+```
+"Qual é o prazo de entrega?"
+"Como faço para cancelar?"
+"Qual a política de reembolso?"
+```
+
+### Atendimento
+```
+"Quero falar com uma pessoa de verdade"
+"Me passa o WhatsApp"
+"Como faço contato?"
 ```
 
 ---
 
-## 🚢 **Deploy**
+## 📋 Fluxo de Agendamento no Chat
 
-Hospedado em **Cloudflare Workers** com auto-deploy via GitHub.
-
-- Qualquer push na branch `main` atualiza o site automaticamente
-- Verifique em `fenda.isaacmota1007.workers.dev`
+```
+CLIENTE                          BOT
+   |                             |
+   |—— "Quero agendar" ———————→   |
+   |                         Qual é seu nome?
+   |← Você pode agendar! ————— 
+   |
+   |—— "João Silva" ———————————→  |
+   |                         Qual seu telefone?
+   |← Prazer, João! ————————
+   |
+   |—— "(73) 98165-6986" ————→   |
+   |                         Qual tipo de ensaio?
+   |← Qual tipo? ——— [Individual] [Casal] ... —
+   |
+   |—— [Clica em Individual] →    |
+   |                         Para qual data?
+   |← Individual! ———————— [Ver datas] ———
+   |
+   |—— [Clica em Ver datas] →     |
+   |                    Consultando banco... ⏳
+   |← Próximas datas livres ——————
+   |
+   |—— "15/08/2026" ————————→     |
+   |                    Consultando horários... ⏳
+   |← Horários para 15/08 ————————
+   |
+   |—— "14:30" ————————————→      |
+   |                    Processando... ⏳
+   |← ✅ AGENDADO! ————————————
+   |    Confirmação no WhatsApp
+```
 
 ---
 
-## 📞 **Suporte**
+## 💰 Configurar Valores
 
-Para problemas ou melhorias:
-- Verifique o console do navegador (DevTools)
-- Consulte logs do Supabase
-- Recarregue a página (Ctrl+Shift+R para limpar cache)
+Os valores estão no arquivo `js/chatbot-inteligente.js`:
+
+**Para editar**, abra o arquivo e procure por:
+
+```javascript
+const VALORES_SERVICOS = {
+    'Ensaio Individual': 'R$ 300 a R$ 500',
+    'Ensaio de Casal': 'R$ 400 a R$ 600',
+    // ... etc
+};
+```
+
+Altere os valores conforme necessário e salve!
 
 ---
 
-**Última atualização:** Julho 2026
+## ⏰ Configurar Horários de Funcionamento
+
+Abra `js/chatbot-inteligente.js` e procure por:
+
+```javascript
+const HORARIO_ABERTURA = '07:00';      // Mude aqui
+const HORARIO_FECHAMENTO = '22:00';    // E aqui
+```
+
+**Exemplos:**
+- Funciona de 8h às 18h? → `'08:00'` e `'18:00'`
+- Funciona 24h? → `'00:00'` e `'23:59'`
+
+---
+
+## 🔗 Configurar WhatsApp
+
+Abra `js/chatbot-inteligente.js` e procure por:
+
+```javascript
+const WHATSAPP_LINK = 'https://wa.me/5585999999999';
+```
+
+**Para alterar seu número:**
+1. Pegue seu número com DDD (exemplo: 73981656986)
+2. Coloque assim: `'https://wa.me/55' + SEU_NUMERO`
+
+**Exemplo para (73) 98165-6986:**
+```javascript
+const WHATSAPP_LINK = 'https://wa.me/5573981656986';
+```
+
+---
+
+## 🎨 Personalizar Aparência (Opcional)
+
+Se quiser mudar cores/tamanho do chat, edite `style.css`:
+
+```css
+.chatbot-painel {
+    width: 350px;           /* Largura */
+    height: 500px;          /* Altura */
+    border-radius: 15px;    /* Cantos arredondados */
+    box-shadow: 0 5px 40px rgba(0,0,0,0.16); /* Sombra */
+}
+
+.chatbot-header {
+    background: #1a1a1a;    /* Cor do cabeçalho */
+}
+
+.chatbot-chip {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+```
+
+---
+
+## 🧪 Testando
+
+### Teste 1: Reconhecer Intenções
+```
+Digite: "E aí, quanto custa um ensaio individual?"
+Esperado: Bot reconhece 3 intenções (saudação, valores, individual)
+          Responde com valor específico
+```
+
+### Teste 2: Agendamento Completo
+```
+Digite: "Quero marcar um ensaio de casal"
+Siga o fluxo: nome → telefone → tipo → data → horário
+Esperado: Mensagem de confirmação com todos os dados
+```
+
+### Teste 3: Datas Disponíveis
+```
+Digite: "Quais datas estão livres?"
+Esperado: Bot consulta banco e lista próximas 7 datas com vagas
+```
+
+### Teste 4: Horários Específicos
+```
+Digite: "Qual horário para 20/08?"
+Esperado: Bot mostra horários realmente livres para aquele dia
+```
+
+---
+
+## ⚙️ Banco de Dados (Supabase)
+
+O chatbot usa as mesmas tabelas do seu formulário:
+
+### Tabela: `agendamentos`
+
+Campos criados pelo chatbot:
+- `nome` (texto)
+- `telefone` (texto)
+- `ensaio` (texto) - tipo de ensaio
+- `data` (data)
+- `horario` (hora)
+- `duracao_min` (número)
+- `status` (texto) - 'confirmado' ou 'cancelado'
+
+✅ **Não precisa fazer nada!** Usa a mesma tabela do formulário.
+
+---
+
+## 🐛 Troubleshooting
+
+### Chat não aparece
+```
+❌ Problema: Botão 💬 não aparece na página
+✅ Solução: Verifique se chatbot-inteligente.js está sendo carregado
+           (F12 → Console → procure por erros)
+```
+
+### Chat não reconhece comandos
+```
+❌ Problema: "Olá" → bot responde com dúvida genérica
+✅ Solução: Verifique console.log para debug
+            Teste com comandos simples primeiro (ex: "menu")
+```
+
+### Agendamento não salva
+```
+❌ Problema: Aparece ✅ mas não salva no Supabase
+✅ Solução: 1) Verifique permissões da tabela no Supabase
+            2) Confirme credenciais (URL e chave pública)
+            3) Veja DevTools → Network para erros
+```
+
+### Horários não aparecem
+```
+❌ Problema: Chat sempre diz "sem horários livres"
+✅ Solução: 1) Confirme que há dados na tabela agendamentos
+            2) Teste com datas diferentes
+            3) Veja se HORARIO_ABERTURA/FECHAMENTO estão corretos
+```
+
+---
+
+## 📞 Fluxo de Suporte
+
+1. **Dúvida sobre configuração?**
+   → Veja `GUIA-CHATBOT-V2.md`
+
+2. **Erro técnico?**
+   → Abra DevTools (F12) → Console e procure pela mensagem de erro
+
+3. **Supabase não funciona?**
+   → Vá ao dashboard do Supabase e confirme:
+     - Tabela `agendamentos` existe
+     - RLS policies permitem inserção
+     - Chave pública está correta
+
+4. **Personalizações avançadas?**
+   → Edite `js/chatbot-inteligente.js` diretamente
+
+---
+
+## 📚 Arquivos Importantes
+
+| Arquivo | Função |
+|---------|--------|
+| `index.html` | Carrega o novo chatbot |
+| `js/chatbot-inteligente.js` | Motor do chatbot (NOVO) |
+| `style.css` | Estilos do chat (pode customizar) |
+| `GUIA-CHATBOT-V2.md` | Guia técnico detalhado |
+| `README.md` | Este arquivo |
+
+---
+
+## 🎓 Próximas Melhorias
+
+Sugestões para futuro:
+
+1. **Integração com IA (Claude API)**
+   - Respostas ainda mais naturais
+   - Entendimento de contexto avançado
+
+2. **Histórico de Chats**
+   - Cliente vê agendamentos anteriores
+   - Sugestões baseadas no histórico
+
+3. **Confirmação de Agendamento**
+   - SMS ou Email com confirmação
+   - Link para editar/cancelar
+
+4. **Sugestões Inteligentes**
+   - "Você agende semana passada. Quer agendar novamente?"
+   - Notificações de promoções
+
+5. **Análise de Satisfação**
+   - Avaliação pós-agendamento
+   - Feedback do cliente
+
+---
+
+## 📝 Versão & Histórico
+
+**Versão Atual:** 2.0  
+**Data:** Julho 2026  
+**Última atualização:** 24/07/2026
+
+### Mudanças v1.0 → v2.0
+
+- ✨ Agendamento integrado no chat
+- ✨ Motor de intenções avançado
+- ✨ Email removido (apenas dados essenciais)
+- ✨ Sugestão inteligente de horários
+- ✨ Menu contextual dinâmico
+- 🐛 Melhor tratamento de erros
+- 📈 Performance otimizada
+
+---
+
+## 💡 Dicas Finais
+
+1. **Teste no celular** - Chat é mobile-first
+2. **Customize as mensagens** - Adicione sua personalidade
+3. **Mantenha valores atualizados** - Clientes veem valores reais
+4. **Respeite horários** - Chat não agenda fora do funcionamento
+5. **Use WhatsApp** - Confirmação automática lá aumenta conversão
+
+---
+
+## ❓ Perguntas Frequentes
+
+**P: O cliente precisa ter email para agendar?**
+R: Não! Email foi removido. Apenas nome, telefone, tipo, data e hora.
+
+**P: O agendamento no chat é automático?**
+R: Sim! Salva direto no Supabase. Cliente recebe confirmação no WhatsApp.
+
+**P: Posso mudar os textos do bot?**
+R: Sim! Abra `chatbot-inteligente.js` e edite as funções de resposta.
+
+**P: E se o cliente não conseguir agendar?**
+R: Chat oferece opção de falar com equipe pelo WhatsApp.
+
+**P: Funciona offline?**
+R: Não. Precisa de conexão com internet (Supabase).
+
+---
+
+## 🎉 Pronto!
+
+Seu chatbot agora é **inteligente, conversacional e vende**! 
+
+Qualquer dúvida, consulte os arquivos ou entre em contato.
+
+**Aproveite! 🚀**
+
+---
+
+*Desenvolvido para Motazt Studio*  
+*© 2026 - Todos os direitos reservados*
