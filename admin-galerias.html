@@ -466,21 +466,6 @@
             object-fit: cover;
         }
 
-        .preview-cr3 {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-size: 11px;
-            text-align: center;
-            padding: 8px;
-            color: var(--ouro-claro);
-            word-break: break-all;
-        }
-
         .preview-status {
             position: absolute;
             bottom: 0;
@@ -660,6 +645,30 @@
         .modal-foto-item:hover img {
             transform: scale(1.1);
         }
+
+        .btn-excluir-foto {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            left: 6px;
+            padding: 6px;
+            background: rgba(150, 20, 20, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .modal-foto-item:hover .btn-excluir-foto {
+            opacity: 1;
+        }
+
+        .btn-excluir-foto:hover {
+            background: rgba(190, 30, 30, 1);
+        }
     </style>
 </head>
 <body>
@@ -714,6 +723,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label>Título da Galeria</label>
+                        <input type="text" id="criarTitulo" placeholder="Ex: Ensaio de Aniversário, Casamento na Praia">
+                    </div>
+
+                    <div class="form-group">
                         <label>Email do Cliente</label>
                         <input type="email" id="criarClienteEmail" placeholder="joao@email.com">
                     </div>
@@ -736,7 +750,7 @@
                     <p><strong>Clique para selecionar</strong> ou arraste fotos aqui</p>
                 </div>
 
-                <input type="file" id="inputArquivos" multiple accept="image/*,.cr3,.CR3"
+                <input type="file" id="inputArquivos" multiple accept="image/*"
                        onchange="selecionarFotos(event)" style="display:none;">
 
                 <div id="fotosPreview" class="fotosPreview"></div>
@@ -818,7 +832,7 @@
                         <div class="galeria-item">
                             <div class="galeria-header-item">
                                 <div>
-                                    <div class="galeria-nome">${primeiroNome}</div>
+                                    <div class="galeria-nome">${gal.titulo || primeiroNome}</div>
                                     <div class="galeria-id">ID: ${gal.id.substring(0, 12)}...</div>
                                 </div>
                                 <span class="galeria-status ${gal.status}">${gal.status.toUpperCase()}</span>
@@ -867,7 +881,7 @@
                                     <div class="fotos-vazio">Carregando...</div>
                                 </div>
                                 <div style="margin-top: 10px;">
-                                    <button class="btn-acao" onclick="abrirModalFotos('${gal.id}')">Ver Todas</button>
+                                    <button class="btn-acao" onclick="abrirModalFotos('${gal.id}')">Abrir galeria</button>
                                 </div>
                             </div>
 
@@ -934,12 +948,20 @@
         }
 
         // ===== MODAL DE FOTOS =====
+        let galeriaAbertaNoModal = null;
+
         async function abrirModalFotos(galeriaId) {
+            galeriaAbertaNoModal = galeriaId;
+            await recarregarModalFotos();
+            document.getElementById('modalFotos').classList.add('ativo');
+        }
+
+        async function recarregarModalFotos() {
             try {
                 const { data: fotos, error } = await adminSupabaseClient
                     .from('fotos')
                     .select('*')
-                    .eq('galeria_id', galeriaId)
+                    .eq('galeria_id', galeriaAbertaNoModal)
                     .order('posicao', { ascending: true });
 
                 if (error) throw error;
@@ -952,19 +974,39 @@
                     grid.innerHTML = fotos.map(foto => `
                         <div class="modal-foto-item">
                             <img src="${foto.arquivo_preview}" alt="Foto" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='">
+                            <button class="btn-excluir-foto" onclick="excluirFotoModal('${foto.id}', '${foto.arquivo_original}')" title="Excluir foto">Excluir</button>
                         </div>
                     `).join('');
                 }
-
-                document.getElementById('modalFotos').classList.add('ativo');
 
             } catch (erro) {
                 console.error('Erro:', erro);
             }
         }
 
+        async function excluirFotoModal(fotoId, arquivoOriginal) {
+            if (!confirm('Excluir esta foto? Essa ação não pode ser desfeita.')) return;
+
+            try {
+                const sucesso = await GaleriaPrivada.deletarFoto(fotoId, arquivoOriginal);
+                if (!sucesso) {
+                    alert('Erro ao excluir a foto. Tente novamente.');
+                    return;
+                }
+
+                await recarregarModalFotos();
+                if (galeriaAbertaNoModal) {
+                    carregarFotosDaGaleria(galeriaAbertaNoModal);
+                }
+            } catch (erro) {
+                console.error('Erro ao excluir foto:', erro);
+                alert('Erro ao excluir a foto. Tente novamente.');
+            }
+        }
+
         function fecharModalFotos() {
             document.getElementById('modalFotos').classList.remove('ativo');
+            galeriaAbertaNoModal = null;
         }
 
         // Fechar modal ao clicar fora
@@ -1085,6 +1127,7 @@
             const agId = document.getElementById('criarAgendamentoId').value.trim();
             const nome = document.getElementById('criarClienteNome').value.trim();
             const email = document.getElementById('criarClienteEmail').value.trim();
+            const titulo = document.getElementById('criarTitulo').value.trim();
             const msg = document.getElementById('msgCriar');
 
             if (!agId || !nome || !email) {
@@ -1093,13 +1136,14 @@
             }
 
             try {
-                const resultado = await GaleriaPrivada.criarGaleriaParaAgendamento(agId, nome, email);
+                const resultado = await GaleriaPrivada.criarGaleriaParaAgendamento(agId, nome, email, titulo);
 
                 mostrarMensagem(msg, `✅ Galeria criada! ID: ${resultado.galeria_id}`, 'sucesso');
 
                 document.getElementById('criarAgendamentoId').value = '';
                 document.getElementById('criarClienteNome').value = '';
                 document.getElementById('criarClienteEmail').value = '';
+                document.getElementById('criarTitulo').value = '';
 
                 setTimeout(() => msg.classList.remove('mostrar'), 6000);
 
@@ -1129,51 +1173,18 @@
             selecionarFotos({ target: { files } });
         });
 
-        // Retorna o nome do arquivo sem extensão, em minúsculas, para casar CR3 com JPG
-        function nomeBase(nomeArquivo) {
-            return nomeArquivo.replace(/\.[^/.]+$/, '').toLowerCase();
-        }
-
         function selecionarFotos(event) {
             fotosParaEnviar = Array.from(event.target.files);
 
-            // Mapear CR3 pelo nome-base para exibir vinculado ao JPG no preview
-            const cr3PorNomeBase = new Map();
-            fotosParaEnviar.forEach(f => {
-                if (f.name.toLowerCase().endsWith('.cr3')) {
-                    cr3PorNomeBase.set(nomeBase(f.name), f);
-                }
-            });
-
             const preview = document.getElementById('fotosPreview');
-            const imagens = fotosParaEnviar.filter(f => !f.name.toLowerCase().endsWith('.cr3'));
-
-            preview.innerHTML = imagens.map((foto) => {
-                const temRaw = cr3PorNomeBase.has(nomeBase(foto.name));
-                const status = temRaw ? 'Pronto (+ RAW)' : 'Pronto';
-                return `
+            preview.innerHTML = fotosParaEnviar.map((foto) => `
                 <div class="preview-foto">
                     <img src="${URL.createObjectURL(foto)}" alt="">
-                    <div class="preview-status">${status}</div>
+                    <div class="preview-status">Pronto</div>
                 </div>
-            `;
-            }).join('');
+            `).join('');
 
-            // CR3 sem JPG correspondente não tem como ser vinculado a uma foto — avisa e não conta
-            const cr3Orfaos = fotosParaEnviar.filter(f =>
-                f.name.toLowerCase().endsWith('.cr3') &&
-                !imagens.some(img => nomeBase(img.name) === nomeBase(f.name))
-            );
-            if (cr3Orfaos.length > 0) {
-                preview.innerHTML += cr3Orfaos.map(f => `
-                    <div class="preview-foto ignorado">
-                        <div class="preview-cr3">RAW sem JPG<br>${f.name}</div>
-                        <div class="preview-status">Envie o JPG com o mesmo nome</div>
-                    </div>
-                `).join('');
-            }
-
-            document.getElementById('btnEnviarFotos').disabled = imagens.length === 0;
+            document.getElementById('btnEnviarFotos').disabled = fotosParaEnviar.length === 0;
         }
 
         async function enviarFotos() {
@@ -1185,35 +1196,25 @@
                 return;
             }
 
-            const cr3PorNomeBase = new Map();
-            fotosParaEnviar.forEach(f => {
-                if (f.name.toLowerCase().endsWith('.cr3')) {
-                    cr3PorNomeBase.set(nomeBase(f.name), f);
-                }
-            });
-            const imagens = fotosParaEnviar.filter(f => !f.name.toLowerCase().endsWith('.cr3'));
-
-            if (imagens.length === 0) {
-                mostrarMensagem(msg, 'Selecione ao menos um JPG para enviar', 'erro');
+            if (fotosParaEnviar.length === 0) {
+                mostrarMensagem(msg, 'Selecione fotos para enviar', 'erro');
                 return;
             }
 
             const btn = document.getElementById('btnEnviarFotos');
             btn.disabled = true;
-            btn.textContent = `Enviando ${imagens.length} foto(s)...`;
+            btn.textContent = `Enviando ${fotosParaEnviar.length} foto(s)...`;
 
             let enviadas = 0;
             let erros = 0;
-            const previews = document.querySelectorAll('.preview-foto:not(.ignorado)');
+            const previews = document.querySelectorAll('.preview-foto');
 
-            for (const [idx, foto] of imagens.entries()) {
-                const arquivoRaw = cr3PorNomeBase.get(nomeBase(foto.name)) || null;
-
+            for (const [idx, foto] of fotosParaEnviar.entries()) {
                 try {
                     previews[idx].querySelector('.preview-status').classList.add('enviando');
-                    previews[idx].querySelector('.preview-status').textContent = arquivoRaw ? 'Enviando (+ RAW)...' : 'Enviando...';
+                    previews[idx].querySelector('.preview-status').textContent = 'Enviando...';
 
-                    await GaleriaPrivada.uploadFoto(galeriaId, foto, true, arquivoRaw);
+                    await GaleriaPrivada.uploadFoto(galeriaId, foto, true);
 
                     previews[idx].querySelector('.preview-status').classList.remove('enviando');
                     previews[idx].querySelector('.preview-status').textContent = 'Pronto!';
