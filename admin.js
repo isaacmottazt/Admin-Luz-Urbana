@@ -272,7 +272,7 @@ async function carregarGaleria(){
         imagem.formato || "auto";
 
         const div = document.createElement("div");
-        div.className = "foto-card";
+        div.className = "foto-card carregando";
         div.setAttribute("data-id", imagem.id);
         div.setAttribute("draggable", "true");
 
@@ -284,9 +284,11 @@ async function carregarGaleria(){
 
             <div class="foto-wrap foto-wrap--${formatoAtual}">
                 <img
+                class="foto-imagem-admin"
                 src="${imagem.imagem_url}"
                 alt="Foto"
-                loading="lazy">
+                loading="lazy"
+                decoding="async">
             </div>
 
             <div class="foto-controles">
@@ -310,9 +312,24 @@ async function carregarGaleria(){
 
         galeria.appendChild(div);
 
+        // Mesmo comportamento da galeria privada: shimmer, fade-in e sem corte.
+        const imagemElemento = div.querySelector(".foto-wrap img");
+        const marcarImagemCarregada = () => {
+            imagemElemento.classList.add("carregada");
+            div.classList.remove("carregando");
+        };
+        const marcarErroImagem = () => {
+            div.classList.remove("carregando");
+            div.classList.add("erro-carregamento");
+        };
+        imagemElemento.addEventListener("load", marcarImagemCarregada, { once: true });
+        imagemElemento.addEventListener("error", marcarErroImagem, { once: true });
+        if (imagemElemento.complete) {
+            imagemElemento.naturalWidth > 0 ? marcarImagemCarregada() : marcarErroImagem();
+        }
+
         // Abrir lightbox ao tocar/clicar na foto
-        div.querySelector(".foto-wrap img")
-        .addEventListener("click", () => {
+        imagemElemento.addEventListener("click", () => {
             abrirLightbox(imagem.imagem_url);
         });
 

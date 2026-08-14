@@ -3,9 +3,9 @@
  * Motazt Studio
  *
  * Funciona em 3 momentos:
- * 1. Admin confirma agendamento → gera galeria (identificada só pelo ID)
+ * 1. Admin cria um álbum privado com nome e telefone do cliente
  * 2. Admin faz upload de fotos → vincula à galeria específica
- * 3. Cliente acessa galeria-privada.html?id=xyz → vê só suas fotos
+ * 3. Cliente acessa a galeria privada pelo ID → vê só suas fotos
  *
  * Requer supabase-js via CDN:
  * <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,57 +15,45 @@ const SUPABASE_URL = "https://tbwmsgztpyyratambgqs.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ===== 1. CRIAR GALERIA (chamado quando admin confirma agendamento) =====
+// ===== 1. CRIAR ÁLBUM PRIVADO =====
 
 /**
- * Cria uma galeria privada para um agendamento
- * Chamado no painel admin quando confirma/aceita um agendamento
+ * Cria um álbum privado diretamente pelo painel administrativo.
  *
- * @param {string} agendamentoId - ID do agendamento (UUID)
- * @param {string} clienteNome - Nome do cliente (para referência)
- * @param {string} clienteEmail - Email do cliente (para enviar o link)
+ * @param {string} clienteNome - Nome do cliente
+ * @param {string} clienteTelefone - Telefone do cliente (para enviar o link pelo WhatsApp)
  * @param {string} titulo - Título da galeria (nome do evento/ensaio), exibido para o cliente
  * @returns {Promise} { galeria_id, mensagem }
  */
-async function criarGaleriaParaAgendamento(agendamentoId, clienteNome, clienteEmail, titulo = '') {
+async function criarGaleria(clienteNome, clienteTelefone, titulo = '') {
     try {
-        const dataExpiracao = new Date();
-        dataExpiracao.setDate(dataExpiracao.getDate() + 30); // válida por 30 dias
+        const dataCriacao = new Date();
+        const dataExpiracao = new Date(dataCriacao);
+        dataExpiracao.setDate(dataExpiracao.getDate() + 30);
 
+        // A tabela privada real é public.galerias. A inserção direta evita
+        // dependência da função RPC antiga e do cache do PostgREST.
         const { data, error } = await supabaseClient
             .from('galerias')
             .insert({
-                agendamento_id: agendamentoId,
                 cliente_nome: clienteNome,
-                cliente_email: clienteEmail,
+                cliente_telefone: clienteTelefone,
                 titulo: titulo || null,
-                data_criacao: new Date().toISOString(),
-                data_expiracao: dataExpiracao.toISOString(),
                 status: 'ativa',
-                total_fotos: 0
+                total_fotos: 0,
+                data_criacao: dataCriacao.toISOString(),
+                data_expiracao: dataExpiracao.toISOString()
             })
-            .select();
+            .select('id')
+            .single();
 
         if (error) throw error;
-
-        const galeriaId = data[0].id;
-
-        // TODO: enviar email/WhatsApp para o cliente com o link
-        console.log(`📧 ENVIAR PARA ${clienteEmail}:
----
-Olá ${clienteNome}!
-
-Sua galeria privada está pronta!
-
-🔗 Link: https://seusite.com/galeria-privada.html?id=${galeriaId}
-
-Suas fotos estarão disponíveis por 30 dias.
----`);
+        if (!data?.id) throw new Error('O banco não retornou o ID do álbum criado.');
 
         return {
             sucesso: true,
-            galeria_id: galeriaId,
-            mensagem: 'Galeria criada! Envie o link ao cliente por email/WhatsApp.'
+            galeria_id: data.id,
+            mensagem: 'Álbum criado! Envie o link ao cliente pelo WhatsApp.'
         };
 
     } catch (erro) {
@@ -400,7 +388,7 @@ async function obterInfoGaleria(galeriaId) {
 // ===== EXPORTAR PARA USO =====
 // Deixa disponível globalmente no window
 window.GaleriaPrivada = {
-    criarGaleriaParaAgendamento,
+    criarGaleria,
     validarGaleria,
     listarFotosDaGaleria,
     uploadFoto,

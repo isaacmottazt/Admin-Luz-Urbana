@@ -12,21 +12,49 @@ content="width=device-width, initial-scale=1.0">
 Admin | Motazt Studio
 </title>
 
-<link
-rel="stylesheet"
-href="painel.css">
+
 
 <link
 rel="stylesheet"
 href="admin.css">
 
 <link
+rel="stylesheet"
+href="admin-galerias-site-theme.css?v=20260814-site-theme2">
+
+<link
+rel="stylesheet"
+href="admin-public-gallery-masonry.css?v=20260814-masonry1">
+
+<link
 href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
 rel="stylesheet">
+
+<script src="https://unpkg.com/lucide@latest"></script>
 
 </head>
 
 <body>
+
+<!-- CABEÇALHO PRINCIPAL NO PADRÃO DOS ÁLBUNS PRIVADOS -->
+<header class="admin-topo" id="adminTopo">
+    <a class="admin-logo" href="index.html" aria-label="Motazt Studio — Galeria pública">
+        <img src="img/logo-branco.png" alt="Motazt Studio">
+        <h1>Motazt Studio</h1>
+    </a>
+
+    <nav class="admin-menu" id="adminMenu" aria-label="Navegação do painel">
+        <a class="ativo" href="index.html"><i data-lucide="grid-3x3"></i> Galeria pública</a>
+        <a href="admin-galerias.html"><i data-lucide="images"></i> Álbuns privados</a>
+        <a href="#modalUpload" onclick="abrirModalUpload(); return false;"><i data-lucide="upload"></i> Enviar fotos</a>
+        <a href="#modalUploadDestaque" onclick="abrirModalUploadDestaque(); return false;"><i data-lucide="sparkles"></i> Momentos capturados</a>
+    </nav>
+
+    <div class="admin-menu-right">
+        <button class="admin-sair" type="button" onclick="logout()"><i data-lucide="log-out"></i><span>Sair</span></button>
+        <button class="admin-menu-toggle" id="adminMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false"><i data-lucide="menu"></i></button>
+    </div>
+</header>
 
 <div class="app-shell">
 
@@ -34,15 +62,20 @@ rel="stylesheet">
 <aside class="faixa">
     <div class="faixa-logo"><img src="img/logo.png" alt="Logo"></div>
     <div class="faixa-linha"></div>
-    <a class="faixa-btn" href="painel.html" title="Painel">📊</a>
-    <a class="faixa-btn faixa-btn--ativo" href="index.html" title="Galeria">🖼️</a>
-    <a class="faixa-btn" href="admin-galerias.html" title="Galerias dos Clientes">📸</a>
-    <a class="faixa-btn" href="horarios-painel.html" title="Horários e Cancelamento">⏱️</a>
-    <button class="faixa-btn" onclick="abrirModalUpload()" title="Enviar fotos">📤</button>
-    <button class="faixa-btn" onclick="abrirModalUploadDestaque()" title="Gerenciar Momentos Capturados">⭐</button>
+    <a class="faixa-btn faixa-btn--ativo" href="index.html" title="Galeria pública"><i data-lucide="grid-3x3"></i></a>
+    <a class="faixa-btn" href="admin-galerias.html" title="Álbuns privados"><i data-lucide="images"></i></a>
+    <button class="faixa-btn" onclick="abrirModalUpload()" title="Enviar fotos"><i data-lucide="upload"></i></button>
+    <button class="faixa-btn" onclick="abrirModalUploadDestaque()" title="Gerenciar momentos capturados"><i data-lucide="sparkles"></i></button>
     <div class="faixa-espaco"></div>
-    <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair">⎋</button>
+    <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair"><i data-lucide="log-out"></i></button>
 </aside>
+
+<nav class="bottom-nav" aria-label="Navegação principal">
+    <a class="bottom-nav-item ativo" href="index.html" aria-label="Galeria pública"><i data-lucide="grid-3x3" class="bottom-nav-icon"></i></a>
+    <a class="bottom-nav-item" href="admin-galerias.html" aria-label="Álbuns privados"><i data-lucide="images" class="bottom-nav-icon"></i></a>
+    <button class="bottom-nav-item" type="button" onclick="abrirModalUpload()" aria-label="Enviar fotos"><i data-lucide="upload" class="bottom-nav-icon"></i></button>
+    <button class="bottom-nav-item" type="button" onclick="abrirModalUploadDestaque()" aria-label="Momentos capturados"><i data-lucide="sparkles" class="bottom-nav-icon"></i></button>
+</nav>
 
 <div class="conteudo">
 
@@ -59,7 +92,7 @@ rel="stylesheet">
     <section class="painel-vidro upload-box modal-caixa">
         <div class="painel-vidro-topo">
             <h2>Enviar novas fotos</h2>
-            <button class="modal-fechar" onclick="fecharModalUpload()" title="Fechar">✕</button>
+            <button class="modal-fechar" onclick="fecharModalUpload()" title="Fechar"><i data-lucide="x"></i></button>
         </div>
 
         <div class="upload-corpo">
@@ -75,7 +108,7 @@ rel="stylesheet">
             <button
             class="btn-enviar"
             onclick="enviarImagem()">
-            📤 Enviar Imagens
+            Enviar imagens
             </button>
 
             <p id="status" class="upload-status"></p>
@@ -89,7 +122,7 @@ rel="stylesheet">
     <section class="painel-vidro upload-box modal-caixa">
         <div class="painel-vidro-topo">
             <h2>Momentos Capturados</h2>
-            <button class="modal-fechar" onclick="fecharModalUploadDestaque()" title="Fechar">✕</button>
+            <button class="modal-fechar" onclick="fecharModalUploadDestaque()" title="Fechar"><i data-lucide="x"></i></button>
         </div>
 
         <div class="upload-corpo">
@@ -107,7 +140,7 @@ rel="stylesheet">
             <button
             class="btn-enviar"
             onclick="enviarImagemDestaque()">
-            📤 Enviar Destaques
+            Publicar destaques
             </button>
 
             <p id="statusDestaque" class="upload-status"></p>
@@ -148,7 +181,7 @@ rel="stylesheet">
 
 <!-- LIGHTBOX (tela cheia) -->
 <div class="lightbox" id="lightbox" onclick="fecharLightboxFora(event)">
-    <button class="lightbox-fechar" onclick="fecharLightbox()" title="Fechar">✕</button>
+    <button class="lightbox-fechar" onclick="fecharLightbox()" title="Fechar"><i data-lucide="x"></i></button>
     <img class="lightbox-img" id="lightboxImg" src="" alt="Foto ampliada">
 </div>
 
@@ -160,7 +193,7 @@ rel="stylesheet">
         <p>Essa ação não pode ser desfeita. A foto será removida da galeria e do armazenamento.</p>
         <div class="modal-excluir-botoes">
             <button class="btn-cancelar" onclick="fecharModalExcluir()">Cancelar</button>
-            <button class="btn-confirmar-excluir" onclick="confirmarExclusao()">Excluir</button>
+            <button class="btn-confirmar-excluir" onclick="confirmarExclusao()"><i data-lucide="trash-2"></i> Excluir</button>
         </div>
     </section>
 </div>
@@ -172,6 +205,31 @@ rel="stylesheet">
 <!-- JS -->
 
 <script src="admin.js"></script>
+<script>
+    // Cabeçalho compartilhado com a página de álbuns privados.
+    const adminTopo = document.getElementById('adminTopo');
+    const adminMenu = document.getElementById('adminMenu');
+    const adminMenuToggle = document.getElementById('adminMenuToggle');
+
+    window.addEventListener('scroll', () => {
+        adminTopo?.classList.toggle('rolou', window.scrollY > 40);
+    }, { passive: true });
+
+    adminMenuToggle?.addEventListener('click', () => {
+        const aberto = adminMenu?.classList.toggle('aberto') || false;
+        adminMenuToggle.setAttribute('aria-expanded', String(aberto));
+        adminMenuToggle.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+    });
+
+    adminMenu?.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            adminMenu.classList.remove('aberto');
+            adminMenuToggle?.setAttribute('aria-expanded', 'false');
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => window.lucide?.createIcons());
+</script>
 
 </body>
 </html>

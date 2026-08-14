@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciar Galerias — Admin</title>
-    <link rel="stylesheet" href="painel.css">
+    <link rel="stylesheet" href="admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* ======================================
-           GALERIAS — usa painel.css como base
-           (shell, faixa lateral, painel-vidro,
-           variáveis de cor). Só o específico
-           desta página fica aqui.
+           GALERIAS — interface premium independente
+           do painel administrativo principal.
         ====================================== */
 
         .conteudo{
@@ -111,7 +110,11 @@
         }
 
         .galeria-status.ativa::before {
-            content: '●';
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
         }
 
         .galeria-status.expirada {
@@ -120,7 +123,11 @@
         }
 
         .galeria-status.expirada::before {
-            content: '⚠';
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
         }
 
         .galeria-status.bloqueada {
@@ -129,7 +136,11 @@
         }
 
         .galeria-status.bloqueada::before {
-            content: '🔒';
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
         }
 
         .galeria-info {
@@ -670,8 +681,29 @@
             background: rgba(190, 30, 30, 1);
         }
     </style>
+    <!-- Tema final carregado por último para padronizar a página de álbuns -->
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme2">
 </head>
 <body>
+    <!-- Cabeçalho com a mesma linguagem visual do Site principal -->
+    <header class="admin-topo" id="adminTopo">
+        <a class="admin-logo" href="index.html" aria-label="Motazt Studio — Galeria pública">
+            <img src="img/logo-branco.png" alt="Motazt Studio">
+            <h1>Motazt Studio</h1>
+        </a>
+
+        <nav class="admin-menu" id="adminMenu" aria-label="Navegação do painel">
+            <a href="index.html"><i data-lucide="grid-3x3"></i> Galeria pública</a>
+            <a class="ativo" href="admin-galerias.html"><i data-lucide="images"></i> Álbuns privados</a>
+            <a href="#tabUpload" onclick="mudarAba('upload', document.querySelectorAll('.tab-btn')[2]); return false;"><i data-lucide="upload"></i> Enviar fotos</a>
+        </nav>
+
+        <div class="admin-menu-right">
+            <button class="admin-sair" type="button" onclick="logout()"><i data-lucide="log-out"></i><span>Sair</span></button>
+            <button class="admin-menu-toggle" id="adminMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false"><i data-lucide="menu"></i></button>
+        </div>
+    </header>
 
     <div class="app-shell">
 
@@ -679,24 +711,29 @@
         <aside class="faixa">
             <div class="faixa-logo"><img src="img/logo.png" alt="Logo"></div>
             <div class="faixa-linha"></div>
-            <a class="faixa-btn" href="painel.html" title="Painel">📊</a>
-            <a class="faixa-btn" href="index.html" title="Galeria">🖼️</a>
-            <a class="faixa-btn faixa-btn--ativo" href="admin-galerias.html" title="Galerias dos Clientes">📸</a>
-            <a class="faixa-btn" href="horarios-painel.html" title="Horários e Cancelamento">⏱️</a>
+            <a class="faixa-btn" href="index.html" title="Galeria pública"><i data-lucide="grid-3x3"></i></a>
+            <a class="faixa-btn faixa-btn--ativo" href="admin-galerias.html" title="Álbuns privados"><i data-lucide="images"></i></a>
             <div class="faixa-espaco"></div>
-            <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair">⎋</button>
+            <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair"><i data-lucide="log-out"></i></button>
         </aside>
+
+        <nav class="bottom-nav" aria-label="Navegação principal">
+            <a class="bottom-nav-item" href="index.html" aria-label="Galeria pública"><i data-lucide="grid-3x3" class="bottom-nav-icon"></i></a>
+            <a class="bottom-nav-item ativo" href="admin-galerias.html" aria-label="Álbuns privados"><i data-lucide="images" class="bottom-nav-icon"></i></a>
+            <a class="bottom-nav-item" href="#tabUpload" onclick="mudarAba('upload', document.querySelectorAll('.tab-btn')[2]); return false;" aria-label="Enviar fotos"><i data-lucide="upload" class="bottom-nav-icon"></i></a>
+            <button class="bottom-nav-item" type="button" onclick="logout()" aria-label="Sair"><i data-lucide="log-out" class="bottom-nav-icon"></i></button>
+        </nav>
 
         <!-- Conteúdo -->
         <main class="conteudo">
 
-            <h1>Gerenciar Galerias Privadas</h1>
+            <h1>Álbuns privados</h1>
 
             <!-- Abas -->
             <div class="tabs">
-                <button class="tab-btn ativo" onclick="mudarAba('listar')">📷 Listar Galerias</button>
-                <button class="tab-btn" onclick="mudarAba('criar')">➕ Criar Galeria</button>
-                <button class="tab-btn" onclick="mudarAba('upload')">⬆️ Upload de Fotos</button>
+                <button class="tab-btn ativo" onclick="mudarAba('listar', this)"><i data-lucide="layout-grid"></i> Listar álbuns</button>
+                <button class="tab-btn" onclick="mudarAba('criar', this)"><i data-lucide="folder-plus"></i> Criar álbum</button>
+                <button class="tab-btn" onclick="mudarAba('upload', this)"><i data-lucide="upload"></i> Enviar fotos</button>
             </div>
 
             <!-- ===== ABA 1: LISTAR GALERIAS ===== -->
@@ -710,12 +747,7 @@
             <!-- ===== ABA 2: CRIAR GALERIA ===== -->
             <div id="tabCriar" class="tab-content">
                 <div class="form-criar">
-                    <h2 style="margin-top:0; color:var(--ouro-claro);">Criar Nova Galeria</h2>
-
-                    <div class="form-group">
-                        <label>ID do Agendamento</label>
-                        <input type="text" id="criarAgendamentoId" placeholder="Cole o ID aqui">
-                    </div>
+                        <h2 style="margin-top:0; color:var(--ouro-claro);">Criar novo álbum</h2>
 
                     <div class="form-group">
                         <label>Nome do Cliente</label>
@@ -728,11 +760,11 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Email do Cliente</label>
-                        <input type="email" id="criarClienteEmail" placeholder="joao@email.com">
+                        <label>Telefone do Cliente</label>
+                        <input type="tel" id="criarClienteTelefone" placeholder="(73) 98165-6986" autocomplete="tel">
                     </div>
 
-                    <button class="btn-criar" onclick="criarNovaGaleria()">Criar Galeria</button>
+                    <button class="btn-criar" onclick="criarNovaGaleria()">Criar álbum privado</button>
 
                     <div id="msgCriar" class="msg"></div>
                 </div>
@@ -746,7 +778,7 @@
                 </div>
 
                 <div id="uploadArea" onclick="document.getElementById('inputArquivos').click()">
-                    <div class="upload-icon">📸</div>
+                    <div class="upload-icon"><i data-lucide="image-plus"></i></div>
                     <p><strong>Clique para selecionar</strong> ou arraste fotos aqui</p>
                 </div>
 
@@ -771,7 +803,7 @@
         <div class="modal-conteudo">
             <div class="modal-header">
                 <div class="modal-title">Fotos da Galeria</div>
-                <button class="modal-close" onclick="fecharModalFotos()">✕</button>
+                <button class="modal-close" onclick="fecharModalFotos()" aria-label="Fechar"><i data-lucide="x"></i></button>
             </div>
             <div id="modalFotosGrid" class="modal-fotos-grid"></div>
         </div>
@@ -779,7 +811,7 @@
 
     <!-- Scripts necessários -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="galerias-sistema-completo.js"></script>
+    <script src="galerias-sistema-completo.js?v=20260814-galerias1"></script>
 
     <script>
         // Inicializar cliente admin (ajustar conforme sua config)
@@ -788,11 +820,11 @@
         let fotosParaEnviar = [];
 
         // ===== NAVEGAÇÃO ENTRE ABAS =====
-        function mudarAba(tab) {
+        function mudarAba(tab, botao) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('ativo'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('ativo'));
             
-            event.target.classList.add('ativo');
+            if (botao) botao.classList.add('ativo');
             document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('ativo');
 
             if (tab === 'listar') {
@@ -826,7 +858,8 @@
                     const dias = Math.ceil((expiracao - new Date()) / (1000 * 60 * 60 * 24));
                     
                     // Extrair primeiro nome do cliente
-                    const primeiroNome = gal.cliente_nome.split(' ')[0];
+                    const nomeCliente = gal.cliente_nome || gal.nome || 'Cliente';
+                    const primeiroNome = nomeCliente.split(' ')[0];
 
                     return `
                         <div class="galeria-item">
@@ -852,8 +885,8 @@
                                     <div class="info-value">${dias} dias</div>
                                 </div>
                                 <div class="info-item">
-                                    <div class="info-label">Cliente</div>
-                                    <div class="info-value">${gal.cliente_email || '—'}</div>
+                                    <div class="info-label">Telefone</div>
+                                    <div class="info-value">${gal.cliente_telefone || gal.telefone || '—'}</div>
                                 </div>
                             </div>
 
@@ -862,9 +895,9 @@
                                 <div class="control-group">
                                     <label>Status</label>
                                     <select id="status-${gal.id}" onchange="atualizarStatusGaleria('${gal.id}', this.value)">
-                                        <option value="ativa" ${gal.status === 'ativa' ? 'selected' : ''}>🟢 Ativa</option>
-                                        <option value="bloqueada" ${gal.status === 'bloqueada' ? 'selected' : ''}>🔒 Bloqueada</option>
-                                        <option value="expirada" ${gal.status === 'expirada' ? 'selected' : ''}>⚠️ Expirada</option>
+                            <option value="ativa" ${gal.status === 'ativa' ? 'selected' : ''}>Ativa</option>
+                            <option value="bloqueada" ${gal.status === 'bloqueada' ? 'selected' : ''}>Bloqueada</option>
+                            <option value="expirada" ${gal.status === 'expirada' ? 'selected' : ''}>Expirada</option>
                                     </select>
                                 </div>
                                 <div class="control-group">
@@ -876,7 +909,7 @@
 
                             <!-- Galeria de fotos -->
                             <div class="galeria-fotos">
-                                <label class="fotos-label">📸 Fotos Armazenadas</label>
+                                    <label class="fotos-label"><i data-lucide="images"></i> Fotos armazenadas</label>
                                 <div id="fotos-${gal.id}" class="fotos-grid">
                                     <div class="fotos-vazio">Carregando...</div>
                                 </div>
@@ -886,13 +919,14 @@
                             </div>
 
                             <div class="galeria-actions">
-                                <button class="btn-acao" onclick="copiarIdGaleria('${gal.id}')">📋 Copiar ID</button>
-                                <button class="btn-acao" onclick="abrirLink('${gal.id}')">🔗 Ver Link</button>
-                                <button class="btn-acao btn-danger" onclick="deletarGaleria('${gal.id}')">🗑️ Deletar</button>
+                                <button class="btn-acao" onclick="copiarIdGaleria('${gal.id}')"><i data-lucide="copy"></i> Copiar ID</button>
+                                <button class="btn-acao" onclick="abrirLink('${gal.id}')"><i data-lucide="external-link"></i> Ver link</button>
+                                <button class="btn-acao btn-danger" onclick="deletarGaleria('${gal.id}')"><i data-lucide="trash-2"></i> Excluir</button>
                             </div>
                         </div>
                     `;
                 }).join('');
+                window.lucide?.createIcons();
 
                 // Carregar fotos de cada galeria
                 galerias.forEach(gal => carregarFotosDaGaleria(gal.id));
@@ -1024,7 +1058,7 @@
 
                 if (error) throw error;
                 
-                console.log(`✅ Galeria ${galeriaId} atualizada para ${novoStatus}`);
+                console.log(`Galeria ${galeriaId} atualizada para ${novoStatus}`);
                 carregarGalerias();
 
             } catch (erro) {
@@ -1066,7 +1100,7 @@
 
                 if (error) throw error;
 
-                alert(`✅ Galeria válida por ${dias} dias`);
+                alert(`Galeria válida por ${dias} dias`);
                 carregarGalerias();
 
             } catch (erro) {
@@ -1082,8 +1116,10 @@
         }
 
         function abrirLink(id) {
-            const link = `https://motazt-studio.vercel.app/galeria-privada.html?id=${id}`;
-            window.open(link, '_blank');
+            // Usa o domínio atual ou rota limpa
+            const sitePublico = window.MOTAZT_SITE_URL || 'https://motazt-studio.vercel.app';
+            const link = `${sitePublico}/galeria-privada?id=${encodeURIComponent(id)}`;
+            window.open(link, '_blank', 'noopener,noreferrer');
         }
 
         async function deletarGaleria(id) {
@@ -1114,7 +1150,7 @@
                     .eq('id', id);
 
                 if (error) throw error;
-                alert('✅ Galeria deletada!');
+                alert('Álbum excluído.');
                 carregarGalerias();
             } catch (erro) {
                 console.error('Erro:', erro);
@@ -1124,32 +1160,51 @@
 
         // ===== ABA 2: CRIAR GALERIA =====
         async function criarNovaGaleria() {
-            const agId = document.getElementById('criarAgendamentoId').value.trim();
             const nome = document.getElementById('criarClienteNome').value.trim();
-            const email = document.getElementById('criarClienteEmail').value.trim();
+            const telefone = document.getElementById('criarClienteTelefone').value.trim();
             const titulo = document.getElementById('criarTitulo').value.trim();
             const msg = document.getElementById('msgCriar');
 
-            if (!agId || !nome || !email) {
-                mostrarMensagem(msg, 'Preencha todos os campos', 'erro');
+            if (!nome || !telefone) {
+                mostrarMensagem(msg, 'Preencha pelo menos Nome e Telefone', 'erro');
                 return;
             }
 
             try {
-                const resultado = await GaleriaPrivada.criarGaleriaParaAgendamento(agId, nome, email, titulo);
+                // A tabela privada real do banco é public.galerias.
+                // A criação é feita diretamente nela para não depender de RPC/cache.
+                const resultadoDireto = await adminSupabaseClient
+                    .from('galerias')
+                    .insert({
+                        cliente_nome: nome,
+                        cliente_telefone: telefone,
+                        titulo: titulo || null,
+                        status: 'ativa',
+                        total_fotos: 0,
+                        data_criacao: new Date().toISOString(),
+                        data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                    })
+                    .select('id')
+                    .single();
 
-                mostrarMensagem(msg, `✅ Galeria criada! ID: ${resultado.galeria_id}`, 'sucesso');
+                if (resultadoDireto.error) {
+                    throw new Error(`Galerias: ${resultadoDireto.error.message}`);
+                }
 
-                document.getElementById('criarAgendamentoId').value = '';
+                const galeriaId = resultadoDireto.data?.id;
+                if (!galeriaId) throw new Error('O banco não retornou o ID do álbum.');
+
+                mostrarMensagem(msg, `Álbum criado. ID: ${galeriaId}`, 'sucesso');
+
                 document.getElementById('criarClienteNome').value = '';
-                document.getElementById('criarClienteEmail').value = '';
+                document.getElementById('criarClienteTelefone').value = '';
                 document.getElementById('criarTitulo').value = '';
 
                 setTimeout(() => msg.classList.remove('mostrar'), 6000);
 
             } catch (erro) {
                 console.error('Erro:', erro);
-                mostrarMensagem(msg, '❌ Erro ao criar galeria: ' + (erro.message || 'tente novamente'), 'erro');
+                mostrarMensagem(msg, 'Erro ao criar álbum: ' + (erro.message || 'tente novamente'), 'erro');
             }
         }
 
@@ -1260,8 +1315,46 @@
             }
         }
 
-        // Carregar ao abrir
-        window.addEventListener('load', carregarGalerias);
+        // Configure esta variável se o site público estiver em outro domínio:
+        // window.MOTAZT_SITE_URL = 'https://seu-dominio.com';
+
+        // ===== VERIFICAR AUTENTICAÇÃO AO ABRIR =====
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const { data: { session }, error } = await adminSupabaseClient.auth.getSession();
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                carregarGalerias();
+            } catch (e) {
+                console.error('Erro de sessão:', e);
+                window.location.href = 'login.html';
+            }
+        });
+        // ===== COMPORTAMENTO DO CABEÇALHO DO SITE PRINCIPAL =====
+        const adminTopo = document.getElementById('adminTopo');
+        const adminMenu = document.getElementById('adminMenu');
+        const adminMenuToggle = document.getElementById('adminMenuToggle');
+
+        window.addEventListener('scroll', () => {
+            adminTopo?.classList.toggle('rolou', window.scrollY > 40);
+        }, { passive: true });
+
+        adminMenuToggle?.addEventListener('click', () => {
+            const aberto = adminMenu?.classList.toggle('aberto') || false;
+            adminMenuToggle.setAttribute('aria-expanded', String(aberto));
+            adminMenuToggle.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+        });
+
+        adminMenu?.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                adminMenu.classList.remove('aberto');
+                adminMenuToggle?.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => window.lucide?.createIcons());
     </script>
 
 </body>
