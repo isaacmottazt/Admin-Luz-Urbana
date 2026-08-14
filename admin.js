@@ -76,6 +76,65 @@ document.getElementById(
 const LIMITE_DESTAQUES = 4;
 
 /* ======================================
+   COMPRESSÃO PARA EXIBIÇÃO
+====================================== */
+
+// A galeria pública usa cópias leves: qualidade suficiente para tela,
+// sem enviar o arquivo original e desnecessariamente grande ao Storage.
+const MAX_LADO_EXIBICAO = 2000;
+const QUALIDADE_EXIBICAO = 0.82;
+
+function carregarImagemParaReducao(arquivo) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(arquivo);
+        const imagem = new Image();
+        imagem.onload = () => {
+            URL.revokeObjectURL(url);
+            resolve(imagem);
+        };
+        imagem.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Não foi possível ler a imagem selecionada.'));
+        };
+        imagem.src = url;
+    });
+}
+
+async function prepararImagemParaExibicao(arquivo) {
+    if (!arquivo?.type?.startsWith('image/')) return null;
+
+    const imagem = await carregarImagemParaReducao(arquivo);
+    const maiorLado = Math.max(imagem.naturalWidth, imagem.naturalHeight);
+    const escala = Math.min(1, MAX_LADO_EXIBICAO / maiorLado);
+    const largura = Math.max(1, Math.round(imagem.naturalWidth * escala));
+    const altura = Math.max(1, Math.round(imagem.naturalHeight * escala));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = largura;
+    canvas.height = altura;
+    const contexto = canvas.getContext('2d');
+    contexto.drawImage(imagem, 0, 0, largura, altura);
+
+    const blob = await new Promise(resolve => {
+        canvas.toBlob(resolve, 'image/webp', QUALIDADE_EXIBICAO);
+    });
+
+    // Fallback para navegadores que não suportam WebP via canvas.
+    const blobFinal = blob || await new Promise(resolve => {
+        canvas.toBlob(resolve, 'image/jpeg', QUALIDADE_EXIBICAO);
+    });
+
+    if (!blobFinal) throw new Error('Não foi possível reduzir a imagem.');
+
+    const extensao = blobFinal.type === 'image/webp' ? 'webp' : 'jpg';
+    return new File(
+        [blobFinal],
+        `motazt-display-${Date.now()}-${Math.floor(Math.random() * 100000)}.${extensao}`,
+        { type: blobFinal.type }
+    );
+}
+
+/* ======================================
    ENVIAR IMAGEM
 ====================================== */
 
@@ -93,7 +152,7 @@ async function enviarImagem(){
     }
 
     status.innerHTML =
-    "Enviando imagens...";
+    "Reduzindo imagens e enviando...";
 
     let enviados = 0;
 
@@ -111,10 +170,14 @@ async function enviarImagem(){
                 continue;
             }
 
+            /* REDUZIR ANTES DO UPLOAD */
+            const imagemReduzida = await prepararImagemParaExibicao(arquivo);
+            if (!imagemReduzida) continue;
+
             /* NOME ÚNICO */
 
             const extensao =
-            arquivo.name
+            imagemReduzida.name
             .split(".")
             .pop();
 
@@ -124,7 +187,7 @@ async function enviarImagem(){
 Math.random() * 100000
 )}.${extensao}`;
 
-            /* UPLOAD */
+            /* UPLOAD DA CÓPIA REDUZIDA */
 
             const {
                 error: erroUpload
@@ -132,7 +195,12 @@ Math.random() * 100000
             .from("fotos")
             .upload(
                 nomeArquivo,
-                arquivo
+                imagemReduzida,
+                {
+                    contentType: imagemReduzida.type,
+                    cacheControl: "31536000",
+                    upsert: false
+                }
             );
 
             if(erroUpload){
@@ -672,7 +740,7 @@ async function enviarImagemDestaque(){
         `Só há espaço para mais ${vagasRestantes} foto(s). Enviando essa quantidade...`;
     }else{
         statusDestaque.innerHTML =
-        "Enviando imagens...";
+        "Reduzindo imagens e enviando...";
     }
 
     let enviados = 0;
@@ -689,8 +757,11 @@ async function enviarImagemDestaque(){
                 continue;
             }
 
+            const imagemReduzida = await prepararImagemParaExibicao(arquivo);
+            if (!imagemReduzida) continue;
+
             const extensao =
-            arquivo.name
+            imagemReduzida.name
             .split(".")
             .pop();
 
@@ -706,7 +777,12 @@ Math.random() * 100000
             .from("fotos")
             .upload(
                 nomeArquivo,
-                arquivo
+                imagemReduzida,
+                {
+                    contentType: imagemReduzida.type,
+                    cacheControl: "31536000",
+                    upsert: false
+                }
             );
 
             if(erroUpload){
