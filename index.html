@@ -20,7 +20,7 @@ href="admin.css">
 
 <link
 rel="stylesheet"
-href="admin-galerias-site-theme.css?v=20260814-site-theme2">
+href="admin-galerias-site-theme.css?v=20260814-site-theme6">
 
 <link
 rel="stylesheet"
@@ -46,8 +46,10 @@ rel="stylesheet">
     <nav class="admin-menu" id="adminMenu" aria-label="Navegação do painel">
         <a class="ativo" href="index.html"><i data-lucide="grid-3x3"></i> Galeria pública</a>
         <a href="admin-galerias.html"><i data-lucide="images"></i> Álbuns privados</a>
+        <a href="relatorio.html"><i data-lucide="chart-no-axes-combined"></i> Relatório semanal</a>
         <a href="#modalUpload" onclick="abrirModalUpload(); return false;"><i data-lucide="upload"></i> Enviar fotos</a>
         <a href="#modalUploadDestaque" onclick="abrirModalUploadDestaque(); return false;"><i data-lucide="sparkles"></i> Momentos capturados</a>
+        <a href="diagnostico-album.html"><i data-lucide="scan-search"></i> Diagnóstico do álbum</a>
     </nav>
 
     <div class="admin-menu-right">
@@ -64,6 +66,7 @@ rel="stylesheet">
     <div class="faixa-linha"></div>
     <a class="faixa-btn faixa-btn--ativo" href="index.html" title="Galeria pública"><i data-lucide="grid-3x3"></i></a>
     <a class="faixa-btn" href="admin-galerias.html" title="Álbuns privados"><i data-lucide="images"></i></a>
+    <a class="faixa-btn" href="relatorio.html" title="Relatório semanal"><i data-lucide="chart-no-axes-combined"></i></a>
     <button class="faixa-btn" onclick="abrirModalUpload()" title="Enviar fotos"><i data-lucide="upload"></i></button>
     <button class="faixa-btn" onclick="abrirModalUploadDestaque()" title="Gerenciar momentos capturados"><i data-lucide="sparkles"></i></button>
     <div class="faixa-espaco"></div>
@@ -73,6 +76,7 @@ rel="stylesheet">
 <nav class="bottom-nav" aria-label="Navegação principal">
     <a class="bottom-nav-item ativo" href="index.html" aria-label="Galeria pública"><i data-lucide="grid-3x3" class="bottom-nav-icon"></i></a>
     <a class="bottom-nav-item" href="admin-galerias.html" aria-label="Álbuns privados"><i data-lucide="images" class="bottom-nav-icon"></i></a>
+    <a class="bottom-nav-item" href="relatorio.html" aria-label="Relatório semanal"><i data-lucide="chart-no-axes-combined" class="bottom-nav-icon"></i></a>
     <button class="bottom-nav-item" type="button" onclick="abrirModalUpload()" aria-label="Enviar fotos"><i data-lucide="upload" class="bottom-nav-icon"></i></button>
     <button class="bottom-nav-item" type="button" onclick="abrirModalUploadDestaque()" aria-label="Momentos capturados"><i data-lucide="sparkles" class="bottom-nav-icon"></i></button>
 </nav>
@@ -111,6 +115,10 @@ rel="stylesheet">
             Enviar imagens
             </button>
 
+            <div class="upload-progress" id="progressoGaleria" role="progressbar" aria-label="Progresso do upload" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+                <span class="upload-progress-bar"></span>
+            </div>
+            <p class="upload-progress-label" id="progressoGaleriaTexto" aria-live="polite"></p>
             <p id="status" class="upload-status"></p>
 
         </div>
@@ -143,6 +151,10 @@ rel="stylesheet">
             Publicar destaques
             </button>
 
+            <div class="upload-progress" id="progressoDestaques" role="progressbar" aria-label="Progresso dos destaques" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+                <span class="upload-progress-bar"></span>
+            </div>
+            <p class="upload-progress-label" id="progressoDestaquesTexto" aria-live="polite"></p>
             <p id="statusDestaque" class="upload-status"></p>
 
         </div>
@@ -151,10 +163,14 @@ rel="stylesheet">
 
 <!-- GALERIA -->
 <section class="painel-vidro galeria-secao">
-    <div class="painel-vidro-topo">
+    <div class="painel-vidro-topo galeria-topo-acoes">
         <h2>Galeria</h2>
-        <span class="tag-suave">Fotos publicadas</span>
+        <div class="galeria-preview-acao">
+            <button class="btn-acao" id="btnRegenerarPreviewsGaleria" onclick="regenerarPreviewsGaleria()" title="Criar versões leves das fotos existentes"><i data-lucide="zap"></i> Reduzir fotos existentes</button>
+            <span class="tag-suave">Fotos publicadas</span>
+        </div>
     </div>
+    <p class="status-galeria-preview" id="statusGaleriaPreview" aria-live="polite"></p>
 
     <div
     id="galeria-admin"
@@ -204,7 +220,7 @@ rel="stylesheet">
 
 <!-- JS -->
 
-<script src="admin.js"></script>
+<script src="admin.js?v=20260814-images2"></script>
 <script>
     // Cabeçalho compartilhado com a página de álbuns privados.
     const adminTopo = document.getElementById('adminTopo');

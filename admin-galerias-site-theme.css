@@ -522,3 +522,53 @@ button, input, select { font-family: var(--body); }
     .info-value { font-size: .92rem !important; }
     .galeria-controls { padding: 20px !important; }
 }
+
+.btn-whatsapp:hover {
+    color: #06130b !important;
+    background: #55d98b !important;
+    border-color: #55d98b !important;
+}
+.btn-acao.indisponivel { opacity: .62; }
+
+/* Diagnóstico do álbum */
+.diagnostico-page { max-width: 1100px; }
+.diagnostico-form { display: grid; gap: 18px; margin-bottom: 24px; padding: 24px; }
+.diagnostico-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.diagnostico-acoes button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.diagnostico-acoes svg { width: 17px; height: 17px; }
+.diagnostico-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.diagnostico-card { display: flex; align-items: flex-start; gap: 14px; min-height: 102px; padding: 20px; background: var(--ink-soft); border: 1px solid var(--panel-line); border-left: 3px solid var(--steel); border-radius: var(--radius); }
+.diagnostico-card > svg { flex: 0 0 auto; width: 21px; height: 21px; color: var(--steel); }
+.diagnostico-card strong { display: block; color: var(--text); font-family: var(--sans); font-size: .95rem; }
+.diagnostico-card p { margin: 7px 0 0; color: var(--text-dim); font-size: .82rem; line-height: 1.5; word-break: break-word; }
+.diagnostico-ok { border-left-color: #55d98b; }
+.diagnostico-ok > svg { color: #55d98b; }
+.diagnostico-erro { border-left-color: #e87575; }
+.diagnostico-erro > svg { color: #e87575; }
+.diagnostico-aviso { border-left-color: #e2b86d; }
+.diagnostico-aviso > svg { color: #e2b86d; }
+.diagnostico-vazio { grid-column: 1 / -1; display: grid; place-items: center; gap: 10px; min-height: 180px; color: var(--text-dim); border: 1px dashed var(--panel-line); border-radius: var(--radius); }
+.diagnostico-vazio svg { width: 28px; height: 28px; color: var(--steel); }
+.diagnostico-vazio p { margin: 0; }
+@media (max-width: 680px) { .diagnostico-grid { grid-template-columns: 1fr; } .diagnostico-acoes { flex-direction: column; } .diagnostico-acoes button { width: 100%; } }
+
+/* Cabeçalho da página de diagnóstico */
+.admin-brand { display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; color: var(--text); text-decoration: none; }
+.admin-brand img { width: 40px !important; height: 40px !important; max-width: 40px !important; max-height: 40px !important; object-fit: contain; flex: 0 0 40px; }
+.admin-brand span { color: var(--text); font-family: var(--sans); font-size: 1rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+@media (max-width: 520px) { .admin-brand img { width: 32px !important; height: 32px !important; max-width: 32px !important; max-height: 32px !important; flex-basis: 32px; } .admin-brand span { font-size: .78rem; } }
+
+.diagnostico-reparar { grid-column: 1 / -1; display: grid; gap: 8px; padding: 20px; background: var(--ink-soft); border: 1px solid rgba(226,184,109,.35); border-radius: var(--radius); }
+.diagnostico-reparar small { color: var(--text-dim); font-size: .75rem; line-height: 1.5; }
+.diagnostico-reparar button { justify-self: start; display: inline-flex; align-items: center; gap: 8px; }
+@media (max-width: 680px) { .diagnostico-reparar button { width: 100%; } }
+
+/* Ação de otimização da galeria pública */
+.galeria-topo-acoes { align-items: center; }
+.galeria-preview-acao { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; }
+.galeria-preview-acao .btn-acao { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 8px 14px; color: var(--text); background: transparent; border: 1px solid var(--panel-line); border-radius: 999px; font-family: var(--sans); font-size: .72rem; cursor: pointer; }
+.galeria-preview-acao .btn-acao svg { width: 15px; height: 15px; }
+.galeria-preview-acao .btn-acao:hover { color: var(--ink); background: var(--steel); border-color: var(--steel); }
+.galeria-preview-acao .btn-acao:disabled { opacity: .5; cursor: wait; }
+.status-galeria-preview { min-height: 0; margin: -12px 0 16px; color: var(--steel); font-family: var(--sans); font-size: .76rem; text-align: right; }
+@media (max-width: 640px) { .galeria-topo-acoes { align-items: flex-start; gap: 14px; } .galeria-preview-acao { width: 100%; justify-content: flex-start; } .status-galeria-preview { text-align: left; } }

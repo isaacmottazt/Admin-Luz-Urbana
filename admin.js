@@ -75,6 +75,40 @@ document.getElementById(
 
 const LIMITE_DESTAQUES = 4;
 
+const progressoUpload = {
+    galeria: {
+        barra: document.querySelector('#progressoGaleria .upload-progress-bar'),
+        caixa: document.getElementById('progressoGaleria'),
+        texto: document.getElementById('progressoGaleriaTexto')
+    },
+    destaques: {
+        barra: document.querySelector('#progressoDestaques .upload-progress-bar'),
+        caixa: document.getElementById('progressoDestaques'),
+        texto: document.getElementById('progressoDestaquesTexto')
+    }
+};
+
+function atualizarProgressoUpload(tipo, atual, total, mensagem = '') {
+    const progresso = progressoUpload[tipo];
+    if (!progresso?.caixa) return;
+
+    const percentual = total > 0 ? Math.round((atual / total) * 100) : 0;
+    progresso.caixa.hidden = total <= 0;
+    progresso.caixa.setAttribute('aria-valuenow', String(percentual));
+    progresso.barra.style.width = `${percentual}%`;
+    progresso.texto.textContent = mensagem || `${percentual}% concluído`;
+}
+
+function resetarProgressoUpload(tipo) {
+    const progresso = progressoUpload[tipo];
+    if (!progresso?.caixa) return;
+
+    progresso.caixa.hidden = true;
+    progresso.caixa.setAttribute('aria-valuenow', '0');
+    progresso.barra.style.width = '0%';
+    progresso.texto.textContent = '';
+}
+
 /* ======================================
    COMPRESSÃO PARA EXIBIÇÃO
 ====================================== */
@@ -134,6 +168,60 @@ async function prepararImagemParaExibicao(arquivo) {
     );
 }
 
+async function regenerarPreviewsGaleria() {
+    const botao = document.getElementById('btnRegenerarPreviewsGaleria');
+    const aviso = document.getElementById('statusGaleriaPreview');
+    if (botao) botao.disabled = true;
+    if (aviso) aviso.textContent = 'Verificando fotos sem preview...';
+
+    try {
+        const { data: fotos, error } = await client
+            .from('galeria')
+            .select('id, imagem_url, imagem_preview')
+            .order('id', { ascending: false });
+        if (error) throw error;
+
+        const pendentes = (fotos || []).filter(foto => foto.imagem_url && (!foto.imagem_preview || foto.imagem_preview === foto.imagem_url));
+        if (!pendentes.length) {
+            if (aviso) aviso.textContent = 'Todas as fotos já possuem preview reduzido.';
+            return;
+        }
+
+        if (!confirm(`Gerar previews leves para ${pendentes.length} foto(s)?`)) return;
+        let concluidas = 0;
+        for (const foto of pendentes) {
+            try {
+                const resposta = await fetch(foto.imagem_url, { cache: 'no-store' });
+                if (!resposta.ok) throw new Error(`Imagem HTTP ${resposta.status}`);
+                const blob = await resposta.blob();
+                const arquivo = new File([blob], `galeria-${foto.id}.jpg`, { type: blob.type || 'image/jpeg' });
+                const preview = await prepararImagemParaExibicao(arquivo);
+                const caminho = `galeria-publica/previews/${foto.id}-${Date.now()}-${preview.name}`;
+                const { error: erroUpload } = await client.storage.from('fotos').upload(caminho, preview, {
+                    contentType: preview.type,
+                    cacheControl: '31536000',
+                    upsert: true
+                });
+                if (erroUpload) throw erroUpload;
+                const { data: urlData } = client.storage.from('fotos').getPublicUrl(caminho);
+                const { error: erroUpdate } = await client.from('galeria').update({ imagem_preview: urlData.publicUrl }).eq('id', foto.id);
+                if (erroUpdate) throw erroUpdate;
+                concluidas += 1;
+                if (aviso) aviso.textContent = `Preview ${concluidas} de ${pendentes.length} concluído...`;
+            } catch (erroFoto) {
+                console.warn('Falha ao gerar preview da foto', foto.id, erroFoto);
+            }
+        }
+        if (aviso) aviso.textContent = `${concluidas} de ${pendentes.length} preview(s) gerado(s).`;
+        carregarGaleria();
+    } catch (erro) {
+        console.error(erro);
+        if (aviso) aviso.textContent = `Não foi possível gerar previews: ${erro.message || 'erro desconhecido'}`;
+    } finally {
+        if (botao) botao.disabled = false;
+    }
+}
+
 /* ======================================
    ENVIAR IMAGEM
 ====================================== */
@@ -153,10 +241,12 @@ async function enviarImagem(){
 
     status.innerHTML =
     "Reduzindo imagens e enviando...";
+    atualizarProgressoUpload('galeria', 0, arquivos.length, `Preparando ${arquivos.length} imagem(ns)...`);
 
     let enviados = 0;
 
-    for(const arquivo of arquivos){
+    for(const [indice, arquivo] of Array.from(arquivos).entries()){
+        atualizarProgressoUpload('galeria', indice, arquivos.length, `Processando imagem ${indice + 1} de ${arquivos.length}...`);
 
         try{
 
@@ -245,15 +335,18 @@ Math.random() * 100000
             }
 
             enviados++;
+            atualizarProgressoUpload('galeria', indice + 1, arquivos.length, `Imagem ${indice + 1} de ${arquivos.length} concluída`);
 
         }catch(err){
 
             console.log(err);
+            atualizarProgressoUpload('galeria', indice + 1, arquivos.length, `Imagem ${indice + 1} de ${arquivos.length} com erro`);
 
         }
 
     }
 
+    atualizarProgressoUpload('galeria', arquivos.length, arquivos.length, `${enviados} de ${arquivos.length} imagem(ns) enviada(s)`);
     status.innerHTML =
 
 `${enviados} imagem(ns) enviada(s)!`;
@@ -288,6 +381,7 @@ function fecharModalUpload(){
 
     status.innerHTML = "";
     inputImagem.value = "";
+    resetarProgressoUpload('galeria');
 
 }
 
@@ -353,7 +447,8 @@ async function carregarGaleria(){
             <div class="foto-wrap foto-wrap--${formatoAtual}">
                 <img
                 class="foto-imagem-admin"
-                src="${imagem.imagem_url}"
+                src="${imagem.imagem_preview || imagem.imagem_url}"
+                data-full="${imagem.imagem_url}"
                 alt="Foto"
                 loading="lazy"
                 decoding="async">
@@ -387,6 +482,11 @@ async function carregarGaleria(){
             div.classList.remove("carregando");
         };
         const marcarErroImagem = () => {
+            if (imagemElemento.dataset.full && imagemElemento.src !== imagemElemento.dataset.full && !imagemElemento.dataset.fallback) {
+                imagemElemento.dataset.fallback = '1';
+                imagemElemento.src = imagemElemento.dataset.full;
+                return;
+            }
             div.classList.remove("carregando");
             div.classList.add("erro-carregamento");
         };
@@ -743,9 +843,11 @@ async function enviarImagemDestaque(){
         "Reduzindo imagens e enviando...";
     }
 
+    atualizarProgressoUpload('destaques', 0, arquivosValidos.length, `Preparando ${arquivosValidos.length} destaque(s)...`);
     let enviados = 0;
 
-    for(const arquivo of arquivosValidos){
+    for(const [indice, arquivo] of arquivosValidos.entries()){
+        atualizarProgressoUpload('destaques', indice, arquivosValidos.length, `Processando destaque ${indice + 1} de ${arquivosValidos.length}...`);
 
         try{
 
@@ -815,13 +917,16 @@ Math.random() * 100000
             }
 
             enviados++;
+            atualizarProgressoUpload('destaques', indice + 1, arquivosValidos.length, `Destaque ${indice + 1} de ${arquivosValidos.length} concluído`);
 
         }catch(err){
             console.log(err);
+            atualizarProgressoUpload('destaques', indice + 1, arquivosValidos.length, `Destaque ${indice + 1} com erro`);
         }
 
     }
 
+    atualizarProgressoUpload('destaques', arquivosValidos.length, arquivosValidos.length, `${enviados} de ${arquivosValidos.length} destaque(s) enviado(s)`);
     statusDestaque.innerHTML =
 
 `${enviados} imagem(ns) enviada(s)!`;
@@ -852,6 +957,7 @@ function fecharModalUploadDestaque(){
 
     statusDestaque.innerHTML = "";
     inputImagemDestaque.value = "";
+    resetarProgressoUpload('destaques');
 
 }
 

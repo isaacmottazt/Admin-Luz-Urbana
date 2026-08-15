@@ -54,10 +54,9 @@
                     <h1>Relatório semanal</h1>
                     <p id="periodoRelatorio">Calculando período...</p>
                 </div>
-                <div class="relatorio-actions">
+                <div class="relatorio-actions"><span class="telegram-agendamento" title="O envio é executado pelo servidor, mesmo com o painel fechado."><i data-lucide="send"></i> Telegram automático: segundas, 00:00</span>
                     <button class="btn-relatorio" id="btnAtualizar" type="button"><i data-lucide="refresh-cw"></i> Atualizar</button>
                     <button class="btn-relatorio primario" id="btnEnviarRelatorio" type="button"><i data-lucide="message-circle"></i> Enviar resumo pelo WhatsApp</button>
-                    <button class="btn-relatorio telegram" id="btnEnviarTelegram" type="button"><i data-lucide="send"></i> Enviar pelo Telegram</button>
                 </div>
             </div>
 
@@ -93,13 +92,13 @@
         .eyebrow { display:inline-flex; align-items:center; gap:7px; color:var(--ouro-claro); font-size:11px; text-transform:uppercase; letter-spacing:.12em; }
         .eyebrow svg { width:15px; height:15px; }
         .relatorio-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+        .telegram-agendamento { display:inline-flex; align-items:center; gap:6px; min-height:42px; padding:0 10px; color:var(--ouro-claro); font:500 11px Poppins,sans-serif; }
+        .telegram-agendamento svg { width:15px; height:15px; }
         .btn-relatorio { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:0 15px; color:#fff; background:rgba(255,255,255,.05); border:1px solid var(--borda); border-radius:8px; cursor:pointer; font:600 12px Poppins,sans-serif; }
         .btn-relatorio svg { width:16px; height:16px; }
         .btn-relatorio:hover { border-color:var(--ouro); color:var(--ouro-claro); }
         .btn-relatorio.primario { color:#131313; background:linear-gradient(135deg,var(--ouro-claro),var(--ouro-escuro)); border-color:var(--ouro); }
         .btn-relatorio.primario:hover { color:#131313; transform:translateY(-1px); }
-        .btn-relatorio.telegram { color:#d8eef9; background:rgba(42,130,218,.14); border-color:rgba(42,130,218,.55); }
-        .btn-relatorio.telegram:hover { color:#fff; background:rgba(42,130,218,.26); border-color:#5db5ee; transform:translateY(-1px); }
         .relatorio-mensagem { min-height:24px; color:var(--ouro-claro); font-size:13px; margin:4px 0 18px; }
         .relatorio-mensagem.erro { color:#ff8a80; }
         .metricas-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; margin-bottom:22px; }
@@ -124,7 +123,7 @@
         .btn-tabela { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; color:var(--ouro-claro); background:rgba(214,160,76,.1); border:1px solid rgba(214,160,76,.38); border-radius:999px; cursor:pointer; font:600 11px Poppins,sans-serif; white-space:nowrap; }
         .btn-tabela svg { width:14px; height:14px; }
         @media (max-width:1100px) { .metricas-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
-        @media (max-width:720px) { .relatorio-heading { align-items:stretch; flex-direction:column; } .relatorio-actions { justify-content:flex-start; } .btn-relatorio { flex:1; } .metricas-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .metrica-card { min-height:112px; padding:14px; } .metrica-card strong { font-size:26px; } .relatorio-panel { padding:16px 12px; } .panel-heading { align-items:flex-start; flex-direction:column; gap:8px; } }
+        @media (max-width:720px) { .relatorio-heading { align-items:stretch; flex-direction:column; } .relatorio-actions { justify-content:flex-start; } .telegram-agendamento { padding-left:0; } .btn-relatorio { flex:1; } .metricas-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .metrica-card { min-height:112px; padding:14px; } .metrica-card strong { font-size:26px; } .relatorio-panel { padding:16px 12px; } .panel-heading { align-items:flex-start; flex-direction:column; gap:8px; } }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -244,10 +243,10 @@
             abrirWhatsAppRelatorio(mensagem, telefone);
         }
 
-        function montarResumoRelatorio() {
-            if (!dadosRelatorio) return '';
+        function enviarResumoWhatsApp() {
+            if (!dadosRelatorio) return;
             const r = dadosRelatorio;
-            return [
+            const mensagem = [
                 'Resumo semanal — Motazt Studio',
                 '',
                 `Álbuns ativos: ${r.ativos}`,
@@ -259,48 +258,7 @@
                 '',
                 `Período: ${formatarDataRelatorio(r.inicioSemana)} a ${formatarDataRelatorio(r.agora)}`
             ].join('\n');
-        }
-
-        function enviarResumoWhatsApp() {
-            const mensagem = montarResumoRelatorio();
-            if (mensagem) abrirWhatsAppRelatorio(mensagem);
-        }
-
-        async function enviarResumoTelegram() {
-            const mensagem = montarResumoRelatorio();
-            const aviso = document.getElementById('relatorioMensagem');
-            const botao = document.getElementById('btnEnviarTelegram');
-            if (!mensagem || !botao) return;
-
-            botao.disabled = true;
-            botao.innerHTML = '<i data-lucide="loader-circle"></i> Enviando...';
-            window.lucide?.createIcons();
-            aviso.className = 'relatorio-mensagem';
-            aviso.textContent = 'Enviando o relatório pelo Telegram...';
-
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
-                const resposta = await fetch('/api/telegram-relatorio', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${session.access_token}`
-                    },
-                    body: JSON.stringify({ text: mensagem })
-                });
-                const resultado = await resposta.json().catch(() => ({}));
-                if (!resposta.ok || !resultado.ok) throw new Error(resultado.erro || 'Falha no envio.');
-                aviso.textContent = 'Relatório enviado pelo Telegram com sucesso.';
-            } catch (erro) {
-                console.error('Erro ao enviar relatório pelo Telegram:', erro);
-                aviso.className = 'relatorio-mensagem erro';
-                aviso.textContent = erro.message || 'Não foi possível enviar pelo Telegram.';
-            } finally {
-                botao.disabled = false;
-                botao.innerHTML = '<i data-lucide="send"></i> Enviar pelo Telegram';
-                window.lucide?.createIcons();
-            }
+            abrirWhatsAppRelatorio(mensagem);
         }
 
         async function logout() {
@@ -318,7 +276,6 @@
             await carregarRelatorio();
             document.getElementById('btnAtualizar').addEventListener('click', carregarRelatorio);
             document.getElementById('btnEnviarRelatorio').addEventListener('click', enviarResumoWhatsApp);
-            document.getElementById('btnEnviarTelegram').addEventListener('click', enviarResumoTelegram);
             const topo = document.getElementById('adminTopo');
             const menu = document.getElementById('adminMenu');
             const toggle = document.getElementById('adminMenuToggle');

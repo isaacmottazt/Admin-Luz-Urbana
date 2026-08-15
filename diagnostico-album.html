@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de álbum — Motazt Studio</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme5">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="admin-topo" id="adminTopo">
+        <a class="admin-brand" href="index.html" aria-label="Voltar ao painel">
+            <img src="img/logo-branco.png" alt="Motazt Studio">
+            <span>Motazt Studio</span>
+        </a>
+        <div class="admin-menu-right">
+            <a class="admin-sair" href="index.html" title="Voltar ao painel"><i data-lucide="arrow-left"></i></a>
+            <button class="admin-menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false"><i data-lucide="menu"></i></button>
+        </div>
+    </header>
+
+    <main class="conteudo diagnostico-page">
+        <header class="cabecalho">
+            <div class="cabecalho-titulo">
+                <span class="eyebrow">Ferramenta interna</span>
+                <h1>Diagnóstico do álbum</h1>
+                <p>Verifique acesso, validade, preview, original e arquivos órfãos antes de enviar o link ao cliente.</p>
+            </div>
+        </header>
+
+        <section class="painel-vidro diagnostico-form">
+            <label class="campo-simples">
+                <span>Código ou ID do álbum</span>
+                <input id="albumId" type="text" placeholder="Ex.: MZ-A1B2C3 ou UUID">
+            </label>
+            <div class="diagnostico-acoes">
+                <button class="btn-enviar" id="btnDiagnosticar"><i data-lucide="scan-search"></i> Executar diagnóstico</button>
+                <button class="btn-acao" id="btnOrfaos"><i data-lucide="archive-x"></i> Ver órfãos</button>
+            </div>
+            <p class="upload-status" id="statusDiagnostico" aria-live="polite"></p>
+        </section>
+
+        <section class="diagnostico-grid" id="resultadoDiagnostico" aria-live="polite">
+            <div class="diagnostico-vazio"><i data-lucide="activity"></i><p>Informe um ID para iniciar o diagnóstico.</p></div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="galerias-sistema-completo.js?v=20260814-galerias9"></script>
+    <script>
+        const resultado = document.getElementById('resultadoDiagnostico');
+        const status = document.getElementById('statusDiagnostico');
+        const albumId = document.getElementById('albumId');
+        let fotosDiagnostico = [];
+
+        function escapar(valor) {
+            return String(valor ?? '').replace(/[&<>'"]/g, caractere => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[caractere]);
+        }
+
+        function card(titulo, estado, detalhe, icone = 'check-circle-2') {
+            const classe = estado === 'ok' ? 'diagnostico-ok' : estado === 'erro' ? 'diagnostico-erro' : 'diagnostico-aviso';
+            return `<article class="diagnostico-card ${classe}"><i data-lucide="${icone}"></i><div><strong>${escapar(titulo)}</strong><p>${escapar(detalhe)}</p></div></article>`;
+        }
+
+        async function medirImagem(url, limite = 5000) {
+            if (!url) return { estado: 'erro', ms: null, mensagem: 'URL ausente' };
+            const inicio = performance.now();
+            return new Promise(resolve => {
+                const imagem = new Image();
+                const timer = setTimeout(() => {
+                    imagem.src = '';
+                    resolve({ estado: 'erro', ms: Math.round(performance.now() - inicio), mensagem: 'Tempo acima de 5 segundos' });
+                }, limite);
+                imagem.onload = () => {
+                    clearTimeout(timer);
+                    resolve({ estado: 'ok', ms: Math.round(performance.now() - inicio), mensagem: `${imagem.naturalWidth} × ${imagem.naturalHeight}px` });
+                };
+                imagem.onerror = () => {
+                    clearTimeout(timer);
+                    resolve({ estado: 'erro', ms: Math.round(performance.now() - inicio), mensagem: 'Não carregou' });
+                };
+                imagem.src = `${url}${url.includes('?') ? '&' : '?'}diagnostico=${Date.now()}`;
+            });
+        }
+
+        async function diagnosticar() {
+            const id = albumId.value.trim();
+            if (!id) {
+                status.textContent = 'Informe o ID do álbum.';
+                return;
+            }
+
+            status.textContent = 'Consultando banco e Storage...';
+            resultado.innerHTML = '';
+            try {
+                const estado = await GaleriaPrivada.obterEstadoGaleria(id);
+                const galeria = estado.galeria;
+                if (!galeria) {
+                    resultado.innerHTML = card('Álbum', 'erro', 'Não encontrado, bloqueado ou expirado.', 'circle-alert');
+                    status.textContent = 'Diagnóstico encerrado.';
+                    return;
+                }
+
+                const fotos = await GaleriaPrivada.listarFotosDaGaleria(galeria.id);
+                fotosDiagnostico = fotos || [];
+
+                const primeira = fotosDiagnostico[0];
+                const preview = await medirImagem(primeira?.arquivo_preview);
+                const original = await medirImagem(primeira?.arquivo_full);
+                const duplicados = fotosDiagnostico.filter(foto => foto.arquivo_preview === foto.arquivo_full).length;
+                const expiracao = galeria.data_expiracao ? new Date(galeria.data_expiracao) : null;
+                const valido = !expiracao || expiracao > new Date();
+
+                resultado.innerHTML = [
+                    card('Álbum', estado.estado === 'disponivel' ? 'ok' : 'aviso', `${galeria.titulo || 'Sem título'} — ${estado.estado}`),
+                    card('Validade', valido ? 'ok' : 'erro', expiracao ? expiracao.toLocaleString('pt-BR') : 'Sem data de expiração', valido ? 'shield-check' : 'clock-alert'),
+                    card('Fotos no banco', 'ok', `${fotosDiagnostico.length} foto(s); contador do álbum: ${galeria.total_fotos ?? 'não informado'}`, 'images'),
+                    card('Preview', preview.estado, primeira ? `${preview.mensagem} — ${preview.ms} ms` : 'O álbum não possui fotos', 'image'),
+                    card('Original', original.estado, primeira ? `${original.mensagem} — ${original.ms} ms` : 'O álbum não possui fotos', 'download'),
+                    card('Separação preview/original', duplicados === 0 ? 'ok' : 'aviso', duplicados === 0 ? 'Arquivos separados corretamente.' : `${duplicados} foto(s) ainda usam a mesma URL para preview e original.`, 'split'),
+                    card('Link do álbum', 'ok', `${window.location.origin}/album?${galeria.codigo_curto ? `codigo=${encodeURIComponent(galeria.codigo_curto)}` : `id=${encodeURIComponent(galeria.id)}`}`, 'link')
+                ].join('');
+                if (duplicados > 0) {
+                    const acao = document.createElement('div');
+                    acao.className = 'diagnostico-reparar';
+                    acao.innerHTML = '<button class="btn-enviar" id="btnGerarPreviews"><i data-lucide="wand-sparkles"></i> Gerar previews reduzidos</button><small>Esta ação baixa cada original, cria uma cópia leve e atualiza somente `arquivo_preview`.</small>';
+                    resultado.appendChild(acao);
+                    document.getElementById('btnGerarPreviews').addEventListener('click', regenerarPreviews);
+                }
+                status.textContent = 'Diagnóstico concluído.';
+                window.lucide?.createIcons();
+            } catch (erro) {
+                console.error(erro);
+                resultado.innerHTML = card('Falha no diagnóstico', 'erro', erro.message || 'Verifique autenticação, views e Storage.', 'triangle-alert');
+                status.textContent = 'Não foi possível concluir o diagnóstico.';
+                window.lucide?.createIcons();
+            }
+        }
+
+        async function regenerarPreviews() {
+            const pendentes = fotosDiagnostico.filter(foto => foto.arquivo_preview === foto.arquivo_full);
+            if (!pendentes.length) return;
+            if (!confirm(`Gerar previews reduzidos para ${pendentes.length} foto(s)?`)) return;
+            const botao = document.getElementById('btnGerarPreviews');
+            if (botao) botao.disabled = true;
+            let concluidas = 0;
+            for (const foto of pendentes) {
+                try {
+                    await GaleriaPrivada.regenerarPreviewFoto(foto);
+                    concluidas += 1;
+                    status.textContent = `Gerando preview ${concluidas} de ${pendentes.length}...`;
+                } catch (erro) {
+                    console.warn('Falha ao gerar preview:', foto.id, erro);
+                }
+            }
+            status.textContent = `${concluidas} preview(s) gerado(s). Executando novo diagnóstico...`;
+            diagnosticar();
+        }
+
+        async function listarOrfaos() {
+            status.textContent = 'Buscando candidatos a arquivos órfãos...';
+            try {
+                const { data, error } = await supabaseClient.rpc('listar_arquivos_orfaos');
+                if (error) throw error;
+                const lista = data || [];
+                resultado.innerHTML = lista.length ? lista.map(item => `
+                    <article class="diagnostico-card diagnostico-aviso">
+                        <i data-lucide="file-warning"></i>
+                        <div>
+                            <strong>${escapar(item.nome)}</strong>
+                            <p>${escapar(item.tamanho_bytes || 0)} bytes — criado em ${escapar(new Date(item.criado_em).toLocaleString('pt-BR'))}</p>
+                            <button class="btn-acao btn-danger btn-remover-orfaos" data-orfaos-nome="${encodeURIComponent(item.nome)}"><i data-lucide="trash-2"></i> Remover arquivo</button>
+                        </div>
+                    </article>`).join('') : card('Storage limpo', 'ok', 'Nenhum arquivo órfão foi encontrado.', 'check-circle-2');
+                document.querySelectorAll('.btn-remover-orfaos').forEach(botao => botao.addEventListener('click', () => removerOrfao(decodeURIComponent(botao.dataset.orfaosNome))));
+                status.textContent = `${lista.length} candidato(s) encontrado(s). A remoção exige confirmação individual.`;
+                window.lucide?.createIcons();
+            } catch (erro) {
+                resultado.innerHTML = card('Falha ao listar órfãos', 'erro', erro.message || 'Execute o SQL de segurança e confirme a autenticação.', 'triangle-alert');
+                status.textContent = 'Não foi possível listar os órfãos.';
+                window.lucide?.createIcons();
+            }
+        }
+
+        async function removerOrfao(nome) {
+            if (!confirm(`Remover o arquivo "${nome}" do Storage? Esta ação não pode ser desfeita.`)) return;
+            const { error } = await supabaseClient.storage.from('fotos').remove([nome]);
+            if (error) {
+                status.textContent = `Falha ao remover: ${error.message}`;
+                return;
+            }
+            status.textContent = 'Arquivo removido. Atualizando a lista...';
+            listarOrfaos();
+        }
+
+        document.getElementById('btnDiagnosticar').addEventListener('click', diagnosticar);
+        document.getElementById('btnOrfaos').addEventListener('click', listarOrfaos);
+        albumId.addEventListener('keydown', evento => { if (evento.key === 'Enter') diagnosticar(); });
+        window.lucide?.createIcons();
+
+        (async () => {
+            const { data } = await supabaseClient.auth.getSession();
+            if (!data.session) window.location.href = 'login.html';
+        })();
+    </script>
+</body>
+</html>
