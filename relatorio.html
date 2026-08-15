@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório semanal — Motazt Studio</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme6">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <header class="admin-topo" id="adminTopo">
+        <a class="admin-logo" href="index.html" aria-label="Motazt Studio — Galeria pública">
+            <img src="img/logo-branco.png" alt="Motazt Studio">
+            <h1>Motazt Studio</h1>
+        </a>
+        <nav class="admin-menu" id="adminMenu" aria-label="Navegação do painel">
+            <a href="index.html"><i data-lucide="grid-3x3"></i> Galeria pública</a>
+            <a href="admin-galerias.html"><i data-lucide="images"></i> Álbuns privados</a>
+            <a class="ativo" href="relatorio.html"><i data-lucide="chart-no-axes-combined"></i> Relatório semanal</a>
+            <a href="diagnostico-album.html"><i data-lucide="scan-search"></i> Diagnóstico do álbum</a>
+        </nav>
+        <div class="admin-menu-right">
+            <button class="admin-sair" type="button" onclick="logout()"><i data-lucide="log-out"></i><span>Sair</span></button>
+            <button class="admin-menu-toggle" id="adminMenuToggle" type="button" aria-label="Abrir menu" aria-expanded="false"><i data-lucide="menu"></i></button>
+        </div>
+    </header>
+
+    <div class="app-shell">
+        <aside class="faixa">
+            <div class="faixa-logo"><img src="img/logo.png" alt="Logo"></div>
+            <div class="faixa-linha"></div>
+            <a class="faixa-btn" href="index.html" title="Galeria pública"><i data-lucide="grid-3x3"></i></a>
+            <a class="faixa-btn" href="admin-galerias.html" title="Álbuns privados"><i data-lucide="images"></i></a>
+            <a class="faixa-btn faixa-btn--ativo" href="relatorio.html" title="Relatório semanal"><i data-lucide="chart-no-axes-combined"></i></a>
+            <div class="faixa-espaco"></div>
+            <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair"><i data-lucide="log-out"></i></button>
+        </aside>
+
+        <nav class="bottom-nav" aria-label="Navegação principal">
+            <a class="bottom-nav-item" href="index.html" aria-label="Galeria pública"><i data-lucide="grid-3x3" class="bottom-nav-icon"></i></a>
+            <a class="bottom-nav-item" href="admin-galerias.html" aria-label="Álbuns privados"><i data-lucide="images" class="bottom-nav-icon"></i></a>
+            <a class="bottom-nav-item ativo" href="relatorio.html" aria-label="Relatório semanal"><i data-lucide="chart-no-axes-combined" class="bottom-nav-icon"></i></a>
+            <button class="bottom-nav-item" type="button" onclick="logout()" aria-label="Sair"><i data-lucide="log-out" class="bottom-nav-icon"></i></button>
+        </nav>
+
+        <main class="conteudo relatorio-page">
+            <div class="relatorio-heading">
+                <div>
+                    <span class="eyebrow"><i data-lucide="calendar-range"></i> Visão de gestão</span>
+                    <h1>Relatório semanal</h1>
+                    <p id="periodoRelatorio">Calculando período...</p>
+                </div>
+                <div class="relatorio-actions">
+                    <button class="btn-relatorio" id="btnAtualizar" type="button"><i data-lucide="refresh-cw"></i> Atualizar</button>
+                    <button class="btn-relatorio primario" id="btnEnviarRelatorio" type="button"><i data-lucide="message-circle"></i> Enviar resumo pelo WhatsApp</button>
+                    <button class="btn-relatorio telegram" id="btnEnviarTelegram" type="button"><i data-lucide="send"></i> Enviar pelo Telegram</button>
+                </div>
+            </div>
+
+            <div id="relatorioMensagem" class="relatorio-mensagem" role="status" aria-live="polite"></div>
+
+            <section class="metricas-grid" aria-label="Métricas da semana">
+                <article class="metrica-card"><div class="metrica-icon"><i data-lucide="images"></i></div><div><span>Álbuns ativos</span><strong id="metricaAtivos">—</strong></div></article>
+                <article class="metrica-card"><div class="metrica-icon"><i data-lucide="lock-keyhole"></i></div><div><span>Álbuns expirados</span><strong id="metricaExpirados">—</strong></div></article>
+                <article class="metrica-card"><div class="metrica-icon"><i data-lucide="calendar-clock"></i></div><div><span>Agendados</span><strong id="metricaAgendados">—</strong></div></article>
+                <article class="metrica-card"><div class="metrica-icon"><i data-lucide="folder-plus"></i></div><div><span>Criados na semana</span><strong id="metricaCriados">—</strong></div></article>
+                <article class="metrica-card"><div class="metrica-icon"><i data-lucide="image"></i></div><div><span>Total de fotos</span><strong id="metricaFotos">—</strong></div></article>
+                <article class="metrica-card destaque"><div class="metrica-icon"><i data-lucide="clock-alert"></i></div><div><span>Expiram em até 7 dias</span><strong id="metricaExpirando">—</strong></div></article>
+            </section>
+
+            <section class="relatorio-panel">
+                <div class="panel-heading"><div><span class="eyebrow"><i data-lucide="list-filter"></i> Acompanhamento</span><h2>Álbuns próximos da expiração</h2></div><span id="ultimaAtualizacao" class="ultima-atualizacao"></span></div>
+                <div class="tabela-wrap">
+                    <table class="tabela-albuns">
+                        <thead><tr><th>Álbum</th><th>Código</th><th>Cliente</th><th>Expira em</th><th>Dias</th><th>Ação</th></tr></thead>
+                        <tbody id="tabelaExpirando"><tr><td colspan="6" class="tabela-vazia">Carregando relatório...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <style>
+        :root { --relatorio-acento: #8aa5b3; }
+        .relatorio-page { max-width: 1250px; }
+        .relatorio-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:22px; margin-bottom:24px; }
+        .relatorio-heading h1 { margin: 6px 0 8px; }
+        .relatorio-heading p { margin:0; color:var(--texto-mudo); font-size:13px; }
+        .eyebrow { display:inline-flex; align-items:center; gap:7px; color:var(--ouro-claro); font-size:11px; text-transform:uppercase; letter-spacing:.12em; }
+        .eyebrow svg { width:15px; height:15px; }
+        .relatorio-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+        .btn-relatorio { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:0 15px; color:#fff; background:rgba(255,255,255,.05); border:1px solid var(--borda); border-radius:8px; cursor:pointer; font:600 12px Poppins,sans-serif; }
+        .btn-relatorio svg { width:16px; height:16px; }
+        .btn-relatorio:hover { border-color:var(--ouro); color:var(--ouro-claro); }
+        .btn-relatorio.primario { color:#131313; background:linear-gradient(135deg,var(--ouro-claro),var(--ouro-escuro)); border-color:var(--ouro); }
+        .btn-relatorio.primario:hover { color:#131313; transform:translateY(-1px); }
+        .btn-relatorio.telegram { color:#d8eef9; background:rgba(42,130,218,.14); border-color:rgba(42,130,218,.55); }
+        .btn-relatorio.telegram:hover { color:#fff; background:rgba(42,130,218,.26); border-color:#5db5ee; transform:translateY(-1px); }
+        .relatorio-mensagem { min-height:24px; color:var(--ouro-claro); font-size:13px; margin:4px 0 18px; }
+        .relatorio-mensagem.erro { color:#ff8a80; }
+        .metricas-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; margin-bottom:22px; }
+        .metrica-card { min-height:130px; display:flex; align-items:flex-start; gap:14px; padding:18px; border:1px solid var(--borda); border-radius:12px; background:linear-gradient(145deg,rgba(30,30,30,.9),rgba(16,16,16,.92)); }
+        .metrica-card.destaque { border-color:rgba(214,160,76,.6); }
+        .metrica-icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:10px; color:var(--ouro-claro); background:rgba(214,160,76,.12); }
+        .metrica-icon svg { width:19px; height:19px; }
+        .metrica-card span { display:block; color:var(--texto-mudo); font-size:11px; line-height:1.35; }
+        .metrica-card strong { display:block; margin-top:10px; color:#fff; font:400 30px 'Space Grotesk',sans-serif; }
+        .relatorio-panel { padding:22px; border:1px solid var(--borda); border-radius:12px; background:rgba(18,18,18,.88); }
+        .panel-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:18px; margin-bottom:18px; }
+        .panel-heading h2 { margin:7px 0 0; font:400 22px 'Space Grotesk',sans-serif; color:#fff; }
+        .ultima-atualizacao { color:var(--texto-mudo); font-size:11px; }
+        .tabela-wrap { overflow-x:auto; }
+        .tabela-albuns { width:100%; border-collapse:collapse; min-width:650px; }
+        .tabela-albuns th { padding:11px 12px; text-align:left; color:var(--texto-mudo); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; border-bottom:1px solid var(--borda); }
+        .tabela-albuns td { padding:14px 12px; color:#ddd; font-size:13px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; }
+        .tabela-albuns tr:last-child td { border-bottom:0; }
+        .tabela-albuns strong { color:#fff; font-weight:600; }
+        .tabela-vazia { text-align:center; color:var(--texto-mudo) !important; padding:28px !important; }
+        .dias-alerta { color:var(--ouro-claro) !important; font-weight:600; }
+        .btn-tabela { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; color:var(--ouro-claro); background:rgba(214,160,76,.1); border:1px solid rgba(214,160,76,.38); border-radius:999px; cursor:pointer; font:600 11px Poppins,sans-serif; white-space:nowrap; }
+        .btn-tabela svg { width:14px; height:14px; }
+        @media (max-width:1100px) { .metricas-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+        @media (max-width:720px) { .relatorio-heading { align-items:stretch; flex-direction:column; } .relatorio-actions { justify-content:flex-start; } .btn-relatorio { flex:1; } .metricas-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .metrica-card { min-height:112px; padding:14px; } .metrica-card strong { font-size:26px; } .relatorio-panel { padding:16px 12px; } .panel-heading { align-items:flex-start; flex-direction:column; gap:8px; } }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="galerias-sistema-completo.js?v=20260814-galerias9"></script>
+    <script>
+        const WHATSAPP_ESTUDIO_RELATORIO = '5573981656986';
+        let dadosRelatorio = null;
+
+        function escaparRelatorio(valor) {
+            return String(valor ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function classificarGaleria(galeria, agora = new Date()) {
+            const expiracao = galeria.data_expiracao ? new Date(galeria.data_expiracao) : null;
+            const publicacao = galeria.data_publicacao ? new Date(galeria.data_publicacao) : null;
+            const expirada = Boolean(expiracao && agora >= expiracao) || galeria.status !== 'ativa';
+            const agendada = (galeria.status_publicacao || 'publicado') === 'agendado' && publicacao && publicacao > agora;
+            const bloqueada = (galeria.status_publicacao || 'publicado') === 'bloqueado';
+            const disponivel = !expirada && !agendada && !bloqueada;
+            return { expiracao, publicacao, expirada, agendada, bloqueada, disponivel };
+        }
+
+        function formatarDataRelatorio(data) {
+            if (!data) return '—';
+            const valor = new Date(data);
+            return Number.isNaN(valor.getTime()) ? '—' : valor.toLocaleDateString('pt-BR');
+        }
+
+        function obterDiasRestantes(data, agora = new Date()) {
+            if (!data) return null;
+            return Math.ceil((new Date(data) - agora) / 86400000);
+        }
+
+        function preencherMetrica(id, valor) { document.getElementById(id).textContent = String(valor); }
+
+        function montarResumo(galerias) {
+            const agora = new Date();
+            const inicioSemana = new Date(agora);
+            inicioSemana.setDate(agora.getDate() - 7);
+            const classificadas = galerias.map(galeria => ({ galeria, estado: classificarGaleria(galeria, agora) }));
+            const ativos = classificadas.filter(item => item.estado.disponivel).length;
+            const expirados = classificadas.filter(item => item.estado.expirada).length;
+            const agendados = classificadas.filter(item => item.estado.agendada).length;
+            const criados = galerias.filter(galeria => galeria.data_criacao && new Date(galeria.data_criacao) >= inicioSemana).length;
+            const fotos = galerias.reduce((soma, galeria) => soma + Number(galeria.total_fotos || 0), 0);
+            const expirando = classificadas.filter(item => {
+                const dias = obterDiasRestantes(item.galeria.data_expiracao, agora);
+                return item.estado.disponivel && dias !== null && dias >= 0 && dias <= 7;
+            });
+            return { ativos, expirados, agendados, criados, fotos, expirando, agora, inicioSemana };
+        }
+
+        function renderizarRelatorio(galerias) {
+            dadosRelatorio = montarResumo(galerias);
+            preencherMetrica('metricaAtivos', dadosRelatorio.ativos);
+            preencherMetrica('metricaExpirados', dadosRelatorio.expirados);
+            preencherMetrica('metricaAgendados', dadosRelatorio.agendados);
+            preencherMetrica('metricaCriados', dadosRelatorio.criados);
+            preencherMetrica('metricaFotos', dadosRelatorio.fotos);
+            preencherMetrica('metricaExpirando', dadosRelatorio.expirando.length);
+            document.getElementById('periodoRelatorio').textContent = `Período: ${formatarDataRelatorio(dadosRelatorio.inicioSemana)} a ${formatarDataRelatorio(dadosRelatorio.agora)}`;
+            document.getElementById('ultimaAtualizacao').textContent = `Atualizado em ${dadosRelatorio.agora.toLocaleString('pt-BR')}`;
+
+            const corpo = document.getElementById('tabelaExpirando');
+            if (!dadosRelatorio.expirando.length) {
+                corpo.innerHTML = '<tr><td colspan="6" class="tabela-vazia">Nenhum álbum disponível expira nos próximos 7 dias.</td></tr>';
+                return;
+            }
+            corpo.innerHTML = dadosRelatorio.expirando
+                .sort((a, b) => new Date(a.galeria.data_expiracao) - new Date(b.galeria.data_expiracao))
+                .map(item => {
+                    const galeria = item.galeria;
+                    const dias = obterDiasRestantes(galeria.data_expiracao, dadosRelatorio.agora);
+                    const nome = galeria.titulo || galeria.cliente_nome || 'Álbum sem título';
+                    return `<tr><td><strong>${escaparRelatorio(nome)}</strong></td><td>${escaparRelatorio(galeria.codigo_curto || '—')}</td><td>${escaparRelatorio(galeria.cliente_nome || '—')}</td><td>${formatarDataRelatorio(galeria.data_expiracao)}</td><td class="dias-alerta">${dias} ${dias === 1 ? 'dia' : 'dias'}</td><td><button class="btn-tabela" onclick="avisarClienteRelatorio('${escaparRelatorio(galeria.id)}','${escaparRelatorio(galeria.cliente_nome || 'cliente')}','${escaparRelatorio(galeria.cliente_telefone || '')}','${escaparRelatorio(galeria.data_expiracao)}','${escaparRelatorio(galeria.codigo_curto || '')}')"><i data-lucide="message-circle"></i> Avisar</button></td></tr>`;
+                }).join('');
+            window.lucide?.createIcons();
+        }
+
+        async function carregarRelatorio() {
+            const mensagem = document.getElementById('relatorioMensagem');
+            mensagem.className = 'relatorio-mensagem';
+            mensagem.textContent = 'Carregando métricas...';
+            try {
+                const { data, error } = await supabaseClient
+                    .from('galerias')
+                    .select('id, codigo_curto, cliente_nome, cliente_telefone, titulo, status, status_publicacao, data_criacao, data_expiracao, data_publicacao, total_fotos')
+                    .order('data_criacao', { ascending: false });
+                if (error) throw error;
+                renderizarRelatorio(data || []);
+                mensagem.textContent = '';
+            } catch (erro) {
+                console.error('Erro no relatório:', erro);
+                mensagem.className = 'relatorio-mensagem erro';
+                mensagem.textContent = 'Não foi possível carregar o relatório. Confirme a sessão e execute o SQL de melhorias no Supabase.';
+            }
+        }
+
+        function linkAlbumRelatorio(id, codigoCurto = '') {
+            const base = window.MOTAZT_SITE_URL || 'https://motazt-studio.vercel.app';
+            const parametro = codigoCurto ? `codigo=${encodeURIComponent(codigoCurto)}` : `id=${encodeURIComponent(id)}`;
+            return `${base}/album?${parametro}`;
+        }
+
+        function normalizarTelefoneRelatorio(telefone) {
+            const digitos = String(telefone || '').replace(/\D/g, '');
+            return digitos ? (digitos.startsWith('55') ? digitos : `55${digitos}`) : '';
+        }
+
+        function abrirWhatsAppRelatorio(mensagem, telefone = '') {
+            const destino = normalizarTelefoneRelatorio(telefone) || WHATSAPP_ESTUDIO_RELATORIO;
+            window.open(`https://wa.me/${destino}?text=${encodeURIComponent(mensagem)}`, '_blank', 'noopener,noreferrer');
+        }
+
+        function avisarClienteRelatorio(id, nome, telefone, expiracao, codigoCurto = '') {
+            const mensagem = `Olá ${nome}! Seu álbum do Motazt Studio expira em ${formatarDataRelatorio(expiracao)}. Código: ${codigoCurto || id}. Acesse enquanto estiver disponível:\n\n${linkAlbumRelatorio(id, codigoCurto)}`;
+            abrirWhatsAppRelatorio(mensagem, telefone);
+        }
+
+        function montarResumoRelatorio() {
+            if (!dadosRelatorio) return '';
+            const r = dadosRelatorio;
+            return [
+                'Resumo semanal — Motazt Studio',
+                '',
+                `Álbuns ativos: ${r.ativos}`,
+                `Álbuns expirados: ${r.expirados}`,
+                `Álbuns agendados: ${r.agendados}`,
+                `Álbuns criados na semana: ${r.criados}`,
+                `Total de fotos: ${r.fotos}`,
+                `Expiram em até 7 dias: ${r.expirando.length}`,
+                '',
+                `Período: ${formatarDataRelatorio(r.inicioSemana)} a ${formatarDataRelatorio(r.agora)}`
+            ].join('\n');
+        }
+
+        function enviarResumoWhatsApp() {
+            const mensagem = montarResumoRelatorio();
+            if (mensagem) abrirWhatsAppRelatorio(mensagem);
+        }
+
+        async function enviarResumoTelegram() {
+            const mensagem = montarResumoRelatorio();
+            const aviso = document.getElementById('relatorioMensagem');
+            const botao = document.getElementById('btnEnviarTelegram');
+            if (!mensagem || !botao) return;
+
+            botao.disabled = true;
+            botao.innerHTML = '<i data-lucide="loader-circle"></i> Enviando...';
+            window.lucide?.createIcons();
+            aviso.className = 'relatorio-mensagem';
+            aviso.textContent = 'Enviando o relatório pelo Telegram...';
+
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
+                const resposta = await fetch('/api/telegram-relatorio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({ text: mensagem })
+                });
+                const resultado = await resposta.json().catch(() => ({}));
+                if (!resposta.ok || !resultado.ok) throw new Error(resultado.erro || 'Falha no envio.');
+                aviso.textContent = 'Relatório enviado pelo Telegram com sucesso.';
+            } catch (erro) {
+                console.error('Erro ao enviar relatório pelo Telegram:', erro);
+                aviso.className = 'relatorio-mensagem erro';
+                aviso.textContent = erro.message || 'Não foi possível enviar pelo Telegram.';
+            } finally {
+                botao.disabled = false;
+                botao.innerHTML = '<i data-lucide="send"></i> Enviar pelo Telegram';
+                window.lucide?.createIcons();
+            }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            window.lucide?.createIcons();
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+            await carregarRelatorio();
+            document.getElementById('btnAtualizar').addEventListener('click', carregarRelatorio);
+            document.getElementById('btnEnviarRelatorio').addEventListener('click', enviarResumoWhatsApp);
+            document.getElementById('btnEnviarTelegram').addEventListener('click', enviarResumoTelegram);
+            const topo = document.getElementById('adminTopo');
+            const menu = document.getElementById('adminMenu');
+            const toggle = document.getElementById('adminMenuToggle');
+            window.addEventListener('scroll', () => topo?.classList.toggle('rolou', window.scrollY > 40), { passive: true });
+            toggle?.addEventListener('click', () => {
+                const aberto = menu?.classList.toggle('aberto') || false;
+                toggle.setAttribute('aria-expanded', String(aberto));
+            });
+        });
+    </script>
+</body>
+</html>

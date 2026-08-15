@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciar Galerias — Admin</title>
     <link rel="stylesheet" href="admin.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Poppins:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         /* ======================================
            GALERIAS — interface premium independente
@@ -196,7 +198,8 @@
         }
 
         .control-group input,
-        .control-group select {
+        .control-group select,
+        .control-group textarea {
             padding: 8px 12px;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid var(--borda);
@@ -212,7 +215,8 @@
         }
 
         .control-group input:focus,
-        .control-group select:focus {
+        .control-group select:focus,
+        .control-group textarea:focus {
             outline: none;
             border-color: var(--ouro);
             background: rgba(214, 160, 76, 0.06);
@@ -290,11 +294,13 @@
             position: absolute;
             top: 4px;
             right: 4px;
+            display: grid;
+            place-items: center;
             background: rgba(0, 0, 0, 0.6);
             padding: 4px;
             border-radius: 4px;
-            font-size: 12px;
         }
+        .foto-thumb .foto-favorita svg { width: 13px; height: 13px; color: var(--ouro-claro); fill: currentColor; }
 
         .fotos-vazio {
             text-align: center;
@@ -680,10 +686,79 @@
         .btn-excluir-foto:hover {
             background: rgba(190, 30, 30, 1);
         }
+
+        .publicacao-controls {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+            gap: 12px;
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid var(--borda);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, .2);
+        }
+
+        .publicacao-controls .control-group:nth-child(3) { align-self: end; }
+        .publicacao-hint { grid-column: 1 / -1; color: var(--texto-mudo); font-size: 11px; margin: 0; }
+        .galeria-status.agendado { background: rgba(91, 122, 140, .18); color: #8aa5b3; }
+        .galeria-status.publicado { background: rgba(76, 175, 80, .18); color: #7bd487; }
+        .galeria-status.bloqueado { background: rgba(244, 67, 54, .18); color: #ff8a80; }
+        .galeria-status.pendente { background: rgba(214, 160, 76, .18); color: var(--ouro-claro); }
+        .btn-acao.btn-alerta { border-color: rgba(214,160,76,.55); color: var(--ouro-claro); }
+        .btn-acao.btn-alerta:hover { background: rgba(214,160,76,.14); color: #fff; }
+        .qr-preview { position:relative; overflow:hidden; display:grid; justify-items:center; gap:14px; width:min(520px,100%); padding:38px 28px 32px; color:#f2efe6; background:radial-gradient(circle at 50% 0%,rgba(138,165,179,.2),transparent 42%),linear-gradient(145deg,#18242a 0%,#0a0d0f 62%,#050505 100%); border:1px solid rgba(138,165,179,.28); border-radius:20px; box-shadow:0 24px 70px rgba(0,0,0,.48); }
+        .qr-preview::after { content:''; position:absolute; width:260px; height:260px; right:-120px; bottom:-120px; border:1px solid rgba(242,239,230,.12); border-radius:50%; box-shadow:0 0 0 28px rgba(242,239,230,.03),0 0 0 56px rgba(242,239,230,.02); pointer-events:none; }
+        .qr-brand { position:relative; z-index:1; display:inline-flex; align-items:center; gap:8px; color:#f2efe6; font:600 11px 'Space Grotesk',sans-serif; letter-spacing:.16em; text-transform:uppercase; }
+        .qr-brand-mark { display:grid; place-items:center; width:20px; height:20px; color:#8aa5b3; background:transparent; border-radius:0; }
+        .qr-brand-mark svg { width:20px; height:20px; }
+        .qr-brand strong { display:inline; font:inherit; letter-spacing:inherit; }
+        .qr-brand span { display:none; }
+        .qr-card-title { position:relative; z-index:1; margin:30px 0 8px; color:#f2efe6; font:400 clamp(1.7rem,6vw,2.5rem) 'Archivo Black','Arial Black',sans-serif; line-height:.95; text-align:center; text-transform:uppercase; }
+        .qr-code-shell { position:relative; z-index:1; display:grid; place-items:center; padding:12px; margin:24px auto 16px; background:#f2efe6; border-radius:10px; }
+        .qr-preview canvas, .qr-preview img { display:block; width:166px !important; height:166px !important; image-rendering:pixelated; }
+        .qr-code-label { position:relative; z-index:1; color:rgba(242,239,230,.7); font:13px/1.6 'Space Grotesk',sans-serif; text-align:center; }
+        .qr-code-short { position:relative; z-index:1; color:#8aa5b3; font:700 13px 'Space Grotesk',sans-serif; letter-spacing:.22em; }
+        .qr-link { position:relative; z-index:1; display:block; margin-top:8px; color:rgba(242,239,230,.55); font:11px 'Space Grotesk',sans-serif; text-align:center; word-break:break-all; max-width:360px; }
+        .qr-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:12px; }
+        .qr-actions .btn-acao { min-height:42px; border:0; border-radius:999px; color:#000; background:#f2efe6; font:600 11px 'Space Grotesk',sans-serif; }
+        .qr-actions .btn-acao:hover { color:#000; background:#8aa5b3; }
+        .mensagens-admin-list { display: grid; gap: 12px; min-width: min(720px, 78vw); }
+        .mensagem-admin-item { border: 1px solid var(--borda); border-radius: 8px; padding: 14px; background: rgba(0,0,0,.18); }
+        .mensagem-admin-item header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+        .mensagem-admin-item strong { color: var(--ouro-claro); font-size: 13px; }
+        .mensagem-admin-item p { color: #ddd; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .mensagem-admin-item time { display: block; color: var(--texto-mudo); font-size: 11px; margin-top: 8px; }
+        .mensagem-admin-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+        .mensagem-admin-actions button { padding: 7px 10px; font-size: 11px; }
+        .historico-tabs { display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--borda); padding-bottom:10px; }
+        .historico-tab { border:1px solid var(--borda); background:rgba(255,255,255,.04); color:var(--texto-mudo); border-radius:999px; padding:8px 13px; cursor:pointer; font:600 11px Poppins,sans-serif; }
+        .historico-tab.ativo { background:rgba(214,160,76,.14); color:var(--ouro-claro); border-color:rgba(214,160,76,.5); }
+        .historico-resumo { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
+        .historico-resumo-item { padding:12px; border:1px solid var(--borda); border-radius:8px; background:rgba(0,0,0,.18); }
+        .historico-resumo-item span { display:block; color:var(--texto-mudo); font-size:10px; text-transform:uppercase; letter-spacing:.06em; }
+        .historico-resumo-item strong { display:block; color:#fff; font:400 25px 'Space Grotesk',sans-serif; margin-top:5px; }
+        .historico-lista { display:grid; gap:9px; max-height:52vh; overflow:auto; }
+        .historico-item { display:grid; grid-template-columns:auto 1fr; gap:12px; padding:12px; border-bottom:1px solid rgba(255,255,255,.07); }
+        .historico-item:last-child { border-bottom:0; }
+        .historico-item-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; color:var(--ouro-claro); background:rgba(214,160,76,.12); }
+        .historico-item-icon svg { width:16px; height:16px; }
+        .historico-item strong { color:#fff; font-size:12px; }
+        .historico-item p { color:var(--texto-mudo); font-size:11px; margin-top:4px; line-height:1.5; overflow-wrap:anywhere; }
+        .historico-item time { display:block; color:rgba(255,255,255,.42); font-size:10px; margin-top:5px; }
+        .historico-vazio { padding:26px 10px; text-align:center; color:var(--texto-mudo); font-size:12px; }
+        .badge-mensagem { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 4px 9px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+        .badge-mensagem.aprovada { color: #8fd39a; background: rgba(76,175,80,.14); }
+        .badge-mensagem.pendente { color: var(--ouro-claro); background: rgba(214,160,76,.14); }
+        .badge-mensagem.oculta { color: #ff8a80; background: rgba(244,67,54,.14); }
+        @media (max-width: 720px) {
+            .publicacao-controls { grid-template-columns: 1fr; }
+            .publicacao-controls .control-group:nth-child(3) { align-self: auto; }
+            .publicacao-hint { grid-column: auto; }
+        }
     </style>
     <!-- Tema final carregado por último para padronizar a página de álbuns -->
     <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme2">
+    <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme6">
 </head>
 <body>
     <!-- Cabeçalho com a mesma linguagem visual do Site principal -->
@@ -696,7 +771,9 @@
         <nav class="admin-menu" id="adminMenu" aria-label="Navegação do painel">
             <a href="index.html"><i data-lucide="grid-3x3"></i> Galeria pública</a>
             <a class="ativo" href="admin-galerias.html"><i data-lucide="images"></i> Álbuns privados</a>
+            <a href="relatorio.html"><i data-lucide="chart-no-axes-combined"></i> Relatório semanal</a>
             <a href="#tabUpload" onclick="mudarAba('upload', document.querySelectorAll('.tab-btn')[2]); return false;"><i data-lucide="upload"></i> Enviar fotos</a>
+            <a href="diagnostico-album.html"><i data-lucide="scan-search"></i> Diagnóstico do álbum</a>
         </nav>
 
         <div class="admin-menu-right">
@@ -713,6 +790,7 @@
             <div class="faixa-linha"></div>
             <a class="faixa-btn" href="index.html" title="Galeria pública"><i data-lucide="grid-3x3"></i></a>
             <a class="faixa-btn faixa-btn--ativo" href="admin-galerias.html" title="Álbuns privados"><i data-lucide="images"></i></a>
+            <a class="faixa-btn" href="relatorio.html" title="Relatório semanal"><i data-lucide="chart-no-axes-combined"></i></a>
             <div class="faixa-espaco"></div>
             <button class="faixa-btn faixa-btn--sair" onclick="logout()" title="Sair"><i data-lucide="log-out"></i></button>
         </aside>
@@ -720,6 +798,7 @@
         <nav class="bottom-nav" aria-label="Navegação principal">
             <a class="bottom-nav-item" href="index.html" aria-label="Galeria pública"><i data-lucide="grid-3x3" class="bottom-nav-icon"></i></a>
             <a class="bottom-nav-item ativo" href="admin-galerias.html" aria-label="Álbuns privados"><i data-lucide="images" class="bottom-nav-icon"></i></a>
+            <a class="bottom-nav-item" href="relatorio.html" aria-label="Relatório semanal"><i data-lucide="chart-no-axes-combined" class="bottom-nav-icon"></i></a>
             <a class="bottom-nav-item" href="#tabUpload" onclick="mudarAba('upload', document.querySelectorAll('.tab-btn')[2]); return false;" aria-label="Enviar fotos"><i data-lucide="upload" class="bottom-nav-icon"></i></a>
             <button class="bottom-nav-item" type="button" onclick="logout()" aria-label="Sair"><i data-lucide="log-out" class="bottom-nav-icon"></i></button>
         </nav>
@@ -764,6 +843,17 @@
                         <input type="tel" id="criarClienteTelefone" placeholder="(73) 98165-6986" autocomplete="tel">
                     </div>
 
+                    <div class="form-group">
+                        <label>Publicar em (opcional)</label>
+                        <input type="datetime-local" id="criarDataPublicacao">
+                        <small style="display:block;margin-top:6px;color:var(--texto-mudo);font-size:11px;">Se ficar vazio, o álbum será publicado imediatamente.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mensagem de agradecimento (opcional)</label>
+                        <textarea id="criarMensagemAgradecimento" rows="4" maxlength="1000" placeholder="Obrigado por confiar no Motazt Studio."></textarea>
+                    </div>
+
                     <button class="btn-criar" onclick="criarNovaGaleria()">Criar álbum privado</button>
 
                     <div id="msgCriar" class="msg"></div>
@@ -791,6 +881,10 @@
                     Enviar Fotos
                 </button>
 
+                <div class="upload-progress" id="progressoAlbum" role="progressbar" aria-label="Progresso do upload do álbum" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+                    <span class="upload-progress-bar"></span>
+                </div>
+                <p class="upload-progress-label" id="progressoAlbumTexto" aria-live="polite"></p>
                 <div id="msgUpload" class="msg"></div>
             </div>
 
@@ -809,15 +903,89 @@
         </div>
     </div>
 
+    <div id="modalQrCode" class="modal-fotos">
+        <div class="modal-conteudo">
+            <div class="modal-header">
+                <div class="modal-title" id="qrTitulo">QR Code do álbum</div>
+                <button class="modal-close" onclick="fecharModalQrCode()" aria-label="Fechar"><i data-lucide="x"></i></button>
+            </div>
+            <div class="qr-preview" id="qrCardVisual">
+                <div class="qr-brand"><div class="qr-brand-mark"><i data-lucide="aperture"></i></div><strong>Motazt Studio</strong></div>
+                <div class="qr-card-title" id="qrCardTitle">Acesse seu álbum</div>
+                <div class="qr-code-shell"><div id="qrCodeCanvas"></div></div>
+                <div class="qr-code-label">Escaneie o código para abrir este álbum de fotos.</div>
+                <div class="qr-code-short" id="qrCodigoTexto">MZ-XXXXXX</div>
+                <div class="qr-link" id="qrLinkTexto"></div>
+            </div>
+            <div class="qr-actions">
+                <button class="btn-acao" id="btnBaixarQrCode" type="button"><i data-lucide="download"></i> Baixar cartão PNG</button>
+                <button class="btn-acao" id="btnCopiarQrLink" type="button"><i data-lucide="copy"></i> Copiar link</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalMensagens" class="modal-fotos">
+        <div class="modal-conteudo">
+            <div class="modal-header">
+                <div class="modal-title" id="mensagensTitulo">Mural do álbum</div>
+                <button class="modal-close" onclick="fecharModalMensagens()" aria-label="Fechar"><i data-lucide="x"></i></button>
+            </div>
+            <div id="mensagensAdminLista" class="mensagens-admin-list"></div>
+        </div>
+    </div>
+
+    <div id="modalHistorico" class="modal-fotos">
+        <div class="modal-conteudo">
+            <div class="modal-header">
+                <div class="modal-title" id="historicoTitulo">Histórico do álbum</div>
+                <button class="modal-close" onclick="fecharModalHistorico()" aria-label="Fechar"><i data-lucide="x"></i></button>
+            </div>
+            <div class="historico-resumo">
+                <div class="historico-resumo-item"><span>Acessos</span><strong id="historicoTotalAcessos">—</strong></div>
+                <div class="historico-resumo-item"><span>Downloads</span><strong id="historicoTotalDownloads">—</strong></div>
+            </div>
+            <div class="historico-tabs" role="tablist">
+                <button class="historico-tab ativo" id="tabHistoricoAcessos" type="button" onclick="mudarAbaHistorico('acessos', this)"><i data-lucide="eye"></i> Acessos</button>
+                <button class="historico-tab" id="tabHistoricoDownloads" type="button" onclick="mudarAbaHistorico('downloads', this)"><i data-lucide="download"></i> Downloads</button>
+            </div>
+            <div id="historicoLista" class="historico-lista"></div>
+        </div>
+    </div>
+
     <!-- Scripts necessários -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="galerias-sistema-completo.js?v=20260814-galerias1"></script>
+    <script src="galerias-sistema-completo.js?v=20260814-galerias9"></script>
 
     <script>
         // Inicializar cliente admin (ajustar conforme sua config)
         const adminSupabaseClient = supabaseClient; // usar o cliente do galerias-sistema-completo.js
 
         let fotosParaEnviar = [];
+        let historicoAlbumAtual = { acessos: [], downloads: [] };
+        let qrAlbumAtual = null;
+
+        const progressoAlbum = {
+            caixa: document.getElementById('progressoAlbum'),
+            barra: document.querySelector('#progressoAlbum .upload-progress-bar'),
+            texto: document.getElementById('progressoAlbumTexto')
+        };
+
+        function atualizarProgressoAlbum(atual, total, mensagem = '') {
+            if (!progressoAlbum.caixa) return;
+            const percentual = total > 0 ? Math.round((atual / total) * 100) : 0;
+            progressoAlbum.caixa.hidden = total <= 0;
+            progressoAlbum.caixa.setAttribute('aria-valuenow', String(percentual));
+            progressoAlbum.barra.style.width = `${percentual}%`;
+            progressoAlbum.texto.textContent = mensagem || `${percentual}% concluído`;
+        }
+
+        function resetarProgressoAlbum() {
+            if (!progressoAlbum.caixa) return;
+            progressoAlbum.caixa.hidden = true;
+            progressoAlbum.caixa.setAttribute('aria-valuenow', '0');
+            progressoAlbum.barra.style.width = '0%';
+            progressoAlbum.texto.textContent = '';
+        }
 
         // ===== NAVEGAÇÃO ENTRE ABAS =====
         function mudarAba(tab, botao) {
@@ -830,6 +998,45 @@
             if (tab === 'listar') {
                 carregarGalerias();
             }
+        }
+
+        const SITE_PUBLICO_PADRAO = 'https://motazt-studio.vercel.app';
+
+        function escaparHtmlAdmin(valor) {
+            return String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function escaparAtributoAdmin(valor) {
+            return String(valor ?? '')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\n/g, ' ')
+                .replace(/\r/g, ' ');
+        }
+
+        function formatarParaInputData(data) {
+            if (!data) return '';
+            const dataObj = new Date(data);
+            if (Number.isNaN(dataObj.getTime())) return '';
+            const dois = valor => String(valor).padStart(2, '0');
+            return `${dataObj.getFullYear()}-${dois(dataObj.getMonth() + 1)}-${dois(dataObj.getDate())}T${dois(dataObj.getHours())}:${dois(dataObj.getMinutes())}`;
+        }
+
+        function obterLinkAlbumAdmin(id, codigoCurto = '') {
+            const sitePublico = window.MOTAZT_SITE_URL || SITE_PUBLICO_PADRAO;
+            const parametro = codigoCurto ? `codigo=${encodeURIComponent(codigoCurto)}` : `id=${encodeURIComponent(id)}`;
+            return `${sitePublico}/album?${parametro}`;
+        }
+
+        function formatarDataAdmin(data) {
+            if (!data) return '—';
+            const dataObj = new Date(data);
+            return Number.isNaN(dataObj.getTime()) ? '—' : dataObj.toLocaleString('pt-BR');
         }
 
         // ===== ABA 1: LISTAR GALERIAS =====
@@ -856,6 +1063,10 @@
                 container.innerHTML = galerias.map(gal => {
                     const expiracao = new Date(gal.data_expiracao);
                     const dias = Math.ceil((expiracao - new Date()) / (1000 * 60 * 60 * 24));
+                    const statusPublicacao = gal.status_publicacao || 'publicado';
+                    const codigoCurto = gal.codigo_curto || '';
+                    const statusVisual = gal.status !== 'ativa' ? (gal.status || 'bloqueado') : (dias < 0 ? 'expirada' : statusPublicacao);
+                    const dataPublicacaoInput = formatarParaInputData(gal.data_publicacao);
                     
                     // Extrair primeiro nome do cliente
                     const nomeCliente = gal.cliente_nome || gal.nome || 'Cliente';
@@ -868,7 +1079,7 @@
                                     <div class="galeria-nome">${gal.titulo || primeiroNome}</div>
                                     <div class="galeria-id">ID: ${gal.id.substring(0, 12)}...</div>
                                 </div>
-                                <span class="galeria-status ${gal.status}">${gal.status.toUpperCase()}</span>
+                                <span class="galeria-status ${statusVisual}">${statusVisual.toUpperCase()}</span>
                             </div>
 
                             <div class="galeria-info">
@@ -887,6 +1098,10 @@
                                 <div class="info-item">
                                     <div class="info-label">Telefone</div>
                                     <div class="info-value">${gal.cliente_telefone || gal.telefone || '—'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Código curto</div>
+                                    <div class="info-value">${escaparHtmlAdmin(codigoCurto || 'Execute o SQL')}</div>
                                 </div>
                             </div>
 
@@ -907,6 +1122,27 @@
                                 <button class="btn-salvar-control" onclick="atualizarDiasGaleria('${gal.id}')">Salvar</button>
                             </div>
 
+                            <div class="publicacao-controls">
+                                <div class="control-group">
+                                    <label>Status de publicação</label>
+                                    <select id="publicacao-status-${gal.id}">
+                                        <option value="publicado" ${statusPublicacao === 'publicado' ? 'selected' : ''}>Publicado</option>
+                                        <option value="agendado" ${statusPublicacao === 'agendado' ? 'selected' : ''}>Agendado</option>
+                                        <option value="bloqueado" ${statusPublicacao === 'bloqueado' ? 'selected' : ''}>Bloqueado</option>
+                                    </select>
+                                </div>
+                                <div class="control-group">
+                                    <label>Data e hora da publicação</label>
+                                    <input type="datetime-local" id="publicacao-data-${gal.id}" value="${dataPublicacaoInput}">
+                                </div>
+                                <button class="btn-salvar-control" onclick="salvarPublicacaoGaleria('${gal.id}')">Salvar publicação</button>
+                                <div class="control-group" style="grid-column:1 / -1;">
+                                    <label>Mensagem do cartão de agradecimento</label>
+                                    <textarea id="mensagem-agradecimento-${gal.id}" rows="2" maxlength="1000" placeholder="Obrigado por confiar no Motazt Studio.">${escaparHtmlAdmin(gal.mensagem_agradecimento || '')}</textarea>
+                                </div>
+                                <p class="publicacao-hint">O álbum agendado só ficará disponível depois da data definida. O bloqueio também é verificado no momento da abertura.</p>
+                            </div>
+
                             <!-- Galeria de fotos -->
                             <div class="galeria-fotos">
                                     <label class="fotos-label"><i data-lucide="images"></i> Fotos armazenadas</label>
@@ -919,14 +1155,29 @@
                             </div>
 
                             <div class="galeria-actions">
-                                <button class="btn-acao" onclick="copiarIdGaleria('${gal.id}')"><i data-lucide="copy"></i> Copiar ID</button>
-                                <button class="btn-acao" onclick="abrirLink('${gal.id}')"><i data-lucide="external-link"></i> Ver link</button>
+                                <button class="btn-acao" onclick="copiarCodigoGaleria('${escaparAtributoAdmin(codigoCurto)}', '${gal.id}')"><i data-lucide="copy"></i> Copiar código</button>
+                                <button class="btn-acao" onclick="abrirLink('${gal.id}', '${escaparAtributoAdmin(codigoCurto)}')"><i data-lucide="external-link"></i> Ver link</button>
+                                <button class="btn-acao" onclick="abrirQrCode('${gal.id}', '${escaparAtributoAdmin(gal.titulo || primeiroNome)}', '${escaparAtributoAdmin(codigoCurto)}')"><i data-lucide="qr-code"></i> QR Code</button>
+                                <button class="btn-acao" onclick="abrirMensagensAlbum('${gal.id}', '${escaparAtributoAdmin(gal.titulo || primeiroNome)}')"><i data-lucide="messages-square"></i> Mural</button>
+                                <button class="btn-acao" onclick="abrirHistoricoAlbum('${gal.id}', '${escaparAtributoAdmin(gal.titulo || primeiroNome)}')"><i data-lucide="activity"></i> Histórico</button>
+                                ${dias >= 0 && dias <= 7 ? `<button class="btn-acao btn-alerta" onclick="avisarExpiracao('${gal.id}', '${escaparAtributoAdmin(primeiroNome)}', '${escaparAtributoAdmin(gal.cliente_telefone || gal.telefone || '')}', '${gal.data_expiracao}', '${escaparAtributoAdmin(codigoCurto)}')"><i data-lucide="clock-alert"></i> Avisar expiração</button>` : ''}
+                                <button class="btn-acao btn-whatsapp" data-compartilhar-id="${gal.id}" data-compartilhar-titulo="${encodeURIComponent(gal.titulo || primeiroNome)}" data-compartilhar-telefone="${encodeURIComponent(gal.cliente_telefone || gal.telefone || '')}" data-compartilhar-codigo="${encodeURIComponent(codigoCurto)}"><i data-lucide="message-circle"></i> WhatsApp</button>
                                 <button class="btn-acao btn-danger" onclick="deletarGaleria('${gal.id}')"><i data-lucide="trash-2"></i> Excluir</button>
                             </div>
                         </div>
                     `;
                 }).join('');
                 window.lucide?.createIcons();
+                document.querySelectorAll('[data-compartilhar-id]').forEach(botao => {
+                    botao.addEventListener('click', () => {
+                        compartilharGaleriaWhatsApp(
+                            botao.dataset.compartilharId,
+                            decodeURIComponent(botao.dataset.compartilharTitulo || ''),
+                            decodeURIComponent(botao.dataset.compartilharTelefone || ''),
+                            decodeURIComponent(botao.dataset.compartilharCodigo || '')
+                        );
+                    });
+                });
 
                 // Carregar fotos de cada galeria
                 galerias.forEach(gal => carregarFotosDaGaleria(gal.id));
@@ -964,9 +1215,10 @@
                 container.innerHTML = fotos.slice(0, 4).map(foto => `
                     <div class="foto-thumb">
                         <img src="${foto.arquivo_preview}" alt="Foto" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='">
-                        ${foto.favorita ? '<div class="foto-favorita">⭐</div>' : ''}
+                        ${foto.favorita ? '<div class="foto-favorita" title="Favorita"><i data-lucide="heart"></i></div>' : ''}
                     </div>
                 `).join('');
+                window.lucide?.createIcons();
 
                 if (fotos.length > 4) {
                     container.innerHTML += `<div style="grid-column: 1/-1; text-align: center; padding: 10px; color: var(--texto-mudo); font-size: 12px;">+${fotos.length - 4} mais</div>`;
@@ -1008,7 +1260,7 @@
                     grid.innerHTML = fotos.map(foto => `
                         <div class="modal-foto-item">
                             <img src="${foto.arquivo_preview}" alt="Foto" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='">
-                            <button class="btn-excluir-foto" onclick="excluirFotoModal('${foto.id}', '${foto.arquivo_original}')" title="Excluir foto">Excluir</button>
+                            <button class="btn-excluir-foto" onclick='excluirFotoModal(${JSON.stringify(foto.id)}, ${JSON.stringify(foto.arquivo_preview || '')}, ${JSON.stringify(foto.arquivo_full || '')})' title="Excluir foto">Excluir</button>
                         </div>
                     `).join('');
                 }
@@ -1018,11 +1270,11 @@
             }
         }
 
-        async function excluirFotoModal(fotoId, arquivoOriginal) {
+        async function excluirFotoModal(fotoId, arquivoPreview, arquivoFull) {
             if (!confirm('Excluir esta foto? Essa ação não pode ser desfeita.')) return;
 
             try {
-                const sucesso = await GaleriaPrivada.deletarFoto(fotoId, arquivoOriginal);
+                const sucesso = await GaleriaPrivada.deletarFoto(fotoId, arquivoPreview, arquivoFull);
                 if (!sucesso) {
                     alert('Erro ao excluir a foto. Tente novamente.');
                     return;
@@ -1110,51 +1362,350 @@
         }
 
         // ===== AÇÕES ÚTEIS =====
-        function copiarIdGaleria(id) {
-            navigator.clipboard.writeText(id);
-            alert('ID copiado!');
+        async function copiarCodigoGaleria(codigoCurto, id) {
+            const valor = codigoCurto || id;
+            try {
+                await navigator.clipboard.writeText(valor);
+                alert(codigoCurto ? `Código ${codigoCurto} copiado!` : 'UUID copiado. Execute o SQL para gerar códigos curtos.');
+            } catch (erro) {
+                alert('Não foi possível copiar o identificador.');
+            }
         }
 
-        function abrirLink(id) {
-            // Usa o domínio atual ou rota limpa
-            const sitePublico = window.MOTAZT_SITE_URL || 'https://motazt-studio.vercel.app';
-            const link = `${sitePublico}/galeria-privada?id=${encodeURIComponent(id)}`;
+        function abrirLink(id, codigoCurto = '') {
+            const link = obterLinkAlbumAdmin(id, codigoCurto);
             window.open(link, '_blank', 'noopener,noreferrer');
+        }
+
+        function normalizarTelefoneWhatsApp(telefone) {
+            const digitos = String(telefone || '').replace(/\D/g, '');
+            if (!digitos) return '';
+            return digitos.startsWith('55') ? digitos : `55${digitos}`;
+        }
+
+        function compartilharGaleriaWhatsApp(id, titulo, telefone, codigoCurto = '') {
+            const link = obterLinkAlbumAdmin(id, codigoCurto);
+            const numero = normalizarTelefoneWhatsApp(telefone);
+            const identificador = codigoCurto || id;
+            const mensagem = `Olá! Seu álbum "${titulo || 'Motazt Studio'}" já está disponível.\n\nCódigo: ${identificador}\nAcesse: ${link}`;
+            const destino = numero ? `https://wa.me/${numero}` : 'https://wa.me/';
+            window.open(`${destino}?text=${encodeURIComponent(mensagem)}`, '_blank', 'noopener,noreferrer');
+        }
+
+        async function salvarPublicacaoGaleria(id) {
+            const status = document.getElementById(`publicacao-status-${id}`)?.value || 'publicado';
+            const dataCampo = document.getElementById(`publicacao-data-${id}`)?.value || '';
+            const mensagem = document.getElementById(`mensagem-agradecimento-${id}`)?.value.trim() || null;
+            let dataPublicacao = null;
+
+            if (status === 'agendado') {
+                if (!dataCampo) {
+                    alert('Defina a data e hora da publicação.');
+                    return;
+                }
+                dataPublicacao = new Date(dataCampo);
+                if (Number.isNaN(dataPublicacao.getTime()) || dataPublicacao <= new Date()) {
+                    alert('A publicação programada precisa estar no futuro.');
+                    return;
+                }
+            } else if (dataCampo) {
+                const dataInformada = new Date(dataCampo);
+                dataPublicacao = Number.isNaN(dataInformada.getTime()) ? null : dataInformada;
+            }
+
+            try {
+                const { error } = await adminSupabaseClient
+                    .from('galerias')
+                    .update({
+                        status_publicacao: status,
+                        data_publicacao: dataPublicacao ? dataPublicacao.toISOString() : null,
+                        mensagem_agradecimento: mensagem
+                    })
+                    .eq('id', id);
+                if (error) throw error;
+                alert(status === 'agendado' ? 'Publicação programada com sucesso.' : 'Configuração do álbum salva.');
+                carregarGalerias();
+            } catch (erro) {
+                console.error('Erro ao salvar publicação:', erro);
+                alert('Não foi possível salvar. Execute primeiro o SQL de melhorias no Supabase.');
+            }
+        }
+
+        function abrirQrCode(id, titulo, codigoCurto = '') {
+            if (typeof QRCode === 'undefined') {
+                alert('A biblioteca de QR Code ainda não carregou. Tente novamente.');
+                return;
+            }
+            qrAlbumAtual = { id, titulo: titulo || 'Álbum privado', codigoCurto: codigoCurto || '', link: obterLinkAlbumAdmin(id, codigoCurto) };
+            const modal = document.getElementById('modalQrCode');
+            const container = document.getElementById('qrCodeCanvas');
+            document.getElementById('qrTitulo').textContent = `QR Code — ${qrAlbumAtual.titulo}`;
+            document.getElementById('qrCardTitle').textContent = qrAlbumAtual.titulo;
+            document.getElementById('qrCodigoTexto').textContent = `Código ${qrAlbumAtual.codigoCurto || 'indisponível'}`;
+            document.getElementById('qrLinkTexto').textContent = qrAlbumAtual.link;
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: qrAlbumAtual.link,
+                width: 166,
+                height: 166,
+                colorDark: '#071014',
+                colorLight: '#f2efe6',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            document.getElementById('btnBaixarQrCode').onclick = baixarQrCode;
+            document.getElementById('btnCopiarQrLink').onclick = copiarLinkQr;
+            modal.classList.add('ativo');
+            window.lucide?.createIcons();
+        }
+
+        async function criarCartaoQrPng() {
+            const cartao = document.getElementById('qrCardVisual');
+            if (!cartao || typeof html2canvas !== 'function') return null;
+            return html2canvas(cartao, {
+                backgroundColor: '#090a0b',
+                scale: 2,
+                useCORS: true,
+                logging: false
+            });
+        }
+
+        async function baixarQrCode() {
+            const cartao = await criarCartaoQrPng();
+            if (!cartao || !qrAlbumAtual) {
+                alert('Não foi possível gerar o cartão QR Code agora.');
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = `motazt-album-${(qrAlbumAtual.codigoCurto || qrAlbumAtual.id).slice(0, 12)}.png`;
+            link.href = cartao.toDataURL('image/png');
+            link.click();
+        }
+
+        async function copiarLinkQr() {
+            if (!qrAlbumAtual?.link) return;
+            try {
+                await navigator.clipboard.writeText(qrAlbumAtual.link);
+                const botao = document.getElementById('btnCopiarQrLink');
+                const textoAnterior = botao.innerHTML;
+                botao.innerHTML = '<i data-lucide="check"></i> Link copiado';
+                window.lucide?.createIcons();
+                setTimeout(() => { botao.innerHTML = textoAnterior; window.lucide?.createIcons(); }, 1800);
+            } catch (erro) {
+                alert('Não foi possível copiar o link.');
+            }
+        }
+
+        function fecharModalQrCode() {
+            document.getElementById('modalQrCode')?.classList.remove('ativo');
+        }
+
+        async function abrirMensagensAlbum(id, titulo) {
+            const modal = document.getElementById('modalMensagens');
+            modal.dataset.galeriaId = id;
+            document.getElementById('mensagensTitulo').textContent = `Mural — ${titulo || 'álbum'}`;
+            modal.classList.add('ativo');
+            const lista = document.getElementById('mensagensAdminLista');
+            lista.innerHTML = '<div class="fotos-vazio">Carregando mensagens...</div>';
+            try {
+                const mensagens = await GaleriaPrivada.listarMensagensAdmin(id);
+                renderizarMensagensAdmin(mensagens);
+            } catch (erro) {
+                console.error('Erro ao carregar mural:', erro);
+                lista.innerHTML = '<div class="fotos-vazio">Execute o SQL de melhorias para habilitar o mural.</div>';
+            }
+        }
+
+        function renderizarMensagensAdmin(mensagens) {
+            const lista = document.getElementById('mensagensAdminLista');
+            if (!mensagens?.length) {
+                lista.innerHTML = '<div class="fotos-vazio">Nenhuma mensagem recebida neste álbum.</div>';
+                return;
+            }
+            const rotulos = { pendente: 'Pendente', aprovada: 'Aprovada', oculta: 'Oculta' };
+            lista.innerHTML = mensagens.map(item => `
+                <article class="mensagem-admin-item">
+                    <header>
+                        <strong>${escaparHtmlAdmin(item.autor)}</strong>
+                        <span class="badge-mensagem ${escaparAtributoAdmin(item.status)}">${rotulos[item.status] || 'Pendente'}</span>
+                    </header>
+                    <p>${escaparHtmlAdmin(item.mensagem)}</p>
+                    <time>${escaparHtmlAdmin(formatarDataAdmin(item.data_criacao))}</time>
+                    <div class="mensagem-admin-actions">
+                        <button class="btn-acao" onclick="moderarMensagemAdmin('${escaparAtributoAdmin(item.id)}', 'aprovada')"><i data-lucide="check"></i> Aprovar</button>
+                        <button class="btn-acao" onclick="moderarMensagemAdmin('${escaparAtributoAdmin(item.id)}', 'oculta')"><i data-lucide="eye-off"></i> Ocultar</button>
+                        <button class="btn-acao btn-danger" onclick="excluirMensagemAdmin('${escaparAtributoAdmin(item.id)}')"><i data-lucide="trash-2"></i> Excluir</button>
+                    </div>
+                </article>
+            `).join('');
+            window.lucide?.createIcons();
+        }
+
+        async function moderarMensagemAdmin(id, status) {
+            try {
+                await GaleriaPrivada.moderarMensagemAlbum(id, status);
+                const modal = document.getElementById('modalMensagens');
+                if (modal?.dataset.galeriaId) {
+                    const mensagens = await GaleriaPrivada.listarMensagensAdmin(modal.dataset.galeriaId);
+                    renderizarMensagensAdmin(mensagens);
+                }
+            } catch (erro) {
+                console.error('Erro ao moderar mensagem:', erro);
+                alert('Não foi possível atualizar a mensagem.');
+            }
+        }
+
+        async function excluirMensagemAdmin(id) {
+            if (!confirm('Excluir esta mensagem?')) return;
+            try {
+                await GaleriaPrivada.excluirMensagemAlbum(id);
+                const modal = document.getElementById('modalMensagens');
+                if (modal?.dataset.galeriaId) {
+                    const mensagens = await GaleriaPrivada.listarMensagensAdmin(modal.dataset.galeriaId);
+                    renderizarMensagensAdmin(mensagens);
+                }
+            } catch (erro) {
+                console.error('Erro ao excluir mensagem:', erro);
+                alert('Não foi possível excluir a mensagem.');
+            }
+        }
+
+        function fecharModalMensagens() {
+            const modal = document.getElementById('modalMensagens');
+            if (modal) {
+                modal.classList.remove('ativo');
+                delete modal.dataset.galeriaId;
+            }
+        }
+
+        function formatarDataHistorico(data) {
+            if (!data) return '—';
+            const valor = new Date(data);
+            return Number.isNaN(valor.getTime()) ? '—' : valor.toLocaleString('pt-BR');
+        }
+
+        function resumirDispositivo(userAgent) {
+            const agente = String(userAgent || '');
+            if (!agente) return 'Dispositivo não identificado';
+            if (/iphone|ipad|ios/i.test(agente)) return 'iPhone ou iPad';
+            if (/android/i.test(agente)) return 'Android';
+            if (/windows/i.test(agente)) return 'Windows';
+            if (/macintosh|mac os/i.test(agente)) return 'macOS';
+            if (/linux/i.test(agente)) return 'Linux';
+            return 'Navegador';
+        }
+
+        async function abrirHistoricoAlbum(id, titulo) {
+            const modal = document.getElementById('modalHistorico');
+            modal.dataset.galeriaId = id;
+            document.getElementById('historicoTitulo').textContent = `Histórico — ${titulo || 'álbum'}`;
+            document.getElementById('historicoLista').innerHTML = '<div class="historico-vazio">Carregando histórico...</div>';
+            modal.classList.add('ativo');
+            try {
+                const [acessos, downloads] = await Promise.all([
+                    GaleriaPrivada.listarHistoricoAcessosAdmin(id),
+                    GaleriaPrivada.listarHistoricoDownloadsAdmin(id)
+                ]);
+                historicoAlbumAtual = { acessos, downloads };
+                document.getElementById('historicoTotalAcessos').textContent = acessos.length;
+                document.getElementById('historicoTotalDownloads').textContent = downloads.length;
+                const abaAtiva = document.querySelector('.historico-tab.ativo');
+                renderizarHistorico(abaAtiva?.dataset?.tipo || 'acessos');
+            } catch (erro) {
+                console.error('Erro ao carregar histórico:', erro);
+                document.getElementById('historicoLista').innerHTML = '<div class="historico-vazio">Execute o SQL de código curto e históricos para habilitar esta função.</div>';
+            }
+            window.lucide?.createIcons();
+        }
+
+        function mudarAbaHistorico(tipo, botao) {
+            document.querySelectorAll('.historico-tab').forEach(item => item.classList.remove('ativo'));
+            if (botao) {
+                botao.classList.add('ativo');
+                botao.dataset.tipo = tipo;
+            }
+            renderizarHistorico(tipo);
+        }
+
+        function renderizarHistorico(tipo = 'acessos') {
+            const lista = document.getElementById('historicoLista');
+            if (!lista) return;
+            const itens = historicoAlbumAtual[tipo] || [];
+            if (!itens.length) {
+                lista.innerHTML = `<div class="historico-vazio">Nenhum ${tipo === 'acessos' ? 'acesso' : 'download'} registrado ainda.</div>`;
+                return;
+            }
+            if (tipo === 'acessos') {
+                lista.innerHTML = itens.map(item => `
+                    <article class="historico-item">
+                        <div class="historico-item-icon"><i data-lucide="eye"></i></div>
+                        <div><strong>${escaparHtmlAdmin(resumirDispositivo(item.user_agent))}</strong><p>Código utilizado: ${escaparHtmlAdmin(item.codigo_utilizado || 'ID direto')} · Origem: ${escaparHtmlAdmin(item.origem || 'site')}</p><time>${escaparHtmlAdmin(formatarDataHistorico(item.data_acesso))}</time></div>
+                    </article>
+                `).join('');
+            } else {
+                const tipos = { original: 'Original', selecao: 'Seleção', lote: 'Lote' };
+                lista.innerHTML = itens.map(item => `
+                    <article class="historico-item">
+                        <div class="historico-item-icon"><i data-lucide="download"></i></div>
+                        <div><strong>${escaparHtmlAdmin(tipos[item.tipo_download] || 'Download')}</strong><p>Foto: ${escaparHtmlAdmin(item.foto_id ? `${item.foto_id}`.slice(0, 12) + '…' : 'álbum completo')} · ${escaparHtmlAdmin(resumirDispositivo(item.user_agent))}</p><time>${escaparHtmlAdmin(formatarDataHistorico(item.data_download))}</time></div>
+                    </article>
+                `).join('');
+            }
+            window.lucide?.createIcons();
+        }
+
+        function fecharModalHistorico() {
+            const modal = document.getElementById('modalHistorico');
+            if (modal) {
+                modal.classList.remove('ativo');
+                delete modal.dataset.galeriaId;
+            }
+        }
+
+        document.querySelectorAll('.historico-tab').forEach(botao => {
+            botao.dataset.tipo = botao.id === 'tabHistoricoDownloads' ? 'downloads' : 'acessos';
+        });
+
+        function avisarExpiracao(id, nome, telefone, dataExpiracao, codigoCurto = '') {
+            const link = obterLinkAlbumAdmin(id, codigoCurto);
+            const data = new Date(dataExpiracao).toLocaleDateString('pt-BR');
+            const numero = normalizarTelefoneWhatsApp(telefone);
+            const mensagem = `Olá ${nome || ''}! Seu álbum do Motazt Studio expira em ${data}. Código: ${codigoCurto || id}. Acesse enquanto estiver disponível:\n\n${link}`;
+            const destino = numero ? `https://wa.me/${numero}` : 'https://wa.me/';
+            window.open(`${destino}?text=${encodeURIComponent(mensagem)}`, '_blank', 'noopener,noreferrer');
         }
 
         async function deletarGaleria(id) {
             if (!confirm('Deletar galeria e todas as suas fotos?')) return;
 
             try {
-                // Deletar fotos do storage
-                const { data: fotos } = await adminSupabaseClient
+                // Guardar os caminhos antes da exclusão do banco.
+                const { data: fotos, error: erroFotos } = await adminSupabaseClient
                     .from('fotos')
-                    .select('arquivo_original')
+                    .select('arquivo_preview, arquivo_full')
                     .eq('galeria_id', id);
+                if (erroFotos) throw erroFotos;
 
-                if (fotos && fotos.length > 0) {
-                    const arquivos = fotos.map(f => f.arquivo_original);
-                    await adminSupabaseClient.storage.from('fotos').remove(arquivos);
+                const arquivos = [...new Set((fotos || [])
+                    .flatMap(foto => [foto.arquivo_preview, foto.arquivo_full])
+                    .map(referencia => GaleriaPrivada.extrairCaminhoStorage(referencia))
+                    .filter(Boolean))];
+
+                const removida = await GaleriaPrivada.excluirGaleriaAdmin(id);
+                if (!removida) {
+                    throw new Error('O banco não encontrou este álbum ou a sessão não está autenticada.');
                 }
 
-                // Deletar registros de fotos
-                await adminSupabaseClient
-                    .from('fotos')
-                    .delete()
-                    .eq('galeria_id', id);
+                // A remoção do Storage não impede a exclusão do registro.
+                if (arquivos.length > 0) {
+                    const { error: erroStorage } = await adminSupabaseClient.storage.from('fotos').remove(arquivos);
+                    if (erroStorage) console.warn('Álbum removido, mas houve falha ao limpar o Storage:', erroStorage);
+                }
 
-                // Deletar galeria
-                const { error } = await adminSupabaseClient
-                    .from('galerias')
-                    .delete()
-                    .eq('id', id);
-
-                if (error) throw error;
                 alert('Álbum excluído.');
                 carregarGalerias();
             } catch (erro) {
-                console.error('Erro:', erro);
-                alert('Erro ao deletar');
+                console.error('Erro ao excluir álbum:', erro);
+                alert(`Não foi possível excluir o álbum. ${erro?.message || 'Verifique sua sessão e as permissões do Supabase.'}`);
             }
         }
 
@@ -1163,10 +1714,17 @@
             const nome = document.getElementById('criarClienteNome').value.trim();
             const telefone = document.getElementById('criarClienteTelefone').value.trim();
             const titulo = document.getElementById('criarTitulo').value.trim();
+            const dataPublicacaoCampo = document.getElementById('criarDataPublicacao').value;
+            const mensagemAgradecimento = document.getElementById('criarMensagemAgradecimento').value.trim();
             const msg = document.getElementById('msgCriar');
+            const dataPublicacao = dataPublicacaoCampo ? new Date(dataPublicacaoCampo) : null;
 
             if (!nome || !telefone) {
                 mostrarMensagem(msg, 'Preencha pelo menos Nome e Telefone', 'erro');
+                return;
+            }
+            if (dataPublicacaoCampo && (Number.isNaN(dataPublicacao?.getTime()) || dataPublicacao <= new Date())) {
+                mostrarMensagem(msg, 'A publicação programada precisa estar no futuro.', 'erro');
                 return;
             }
 
@@ -1182,7 +1740,10 @@
                         status: 'ativa',
                         total_fotos: 0,
                         data_criacao: new Date().toISOString(),
-                        data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                        data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        mensagem_agradecimento: mensagemAgradecimento || null,
+                        data_publicacao: dataPublicacao ? dataPublicacao.toISOString() : null,
+                        status_publicacao: dataPublicacao ? 'agendado' : 'publicado'
                     })
                     .select('id')
                     .single();
@@ -1199,6 +1760,8 @@
                 document.getElementById('criarClienteNome').value = '';
                 document.getElementById('criarClienteTelefone').value = '';
                 document.getElementById('criarTitulo').value = '';
+                document.getElementById('criarDataPublicacao').value = '';
+                document.getElementById('criarMensagemAgradecimento').value = '';
 
                 setTimeout(() => msg.classList.remove('mostrar'), 6000);
 
@@ -1259,6 +1822,7 @@
             const btn = document.getElementById('btnEnviarFotos');
             btn.disabled = true;
             btn.textContent = `Enviando ${fotosParaEnviar.length} foto(s)...`;
+            atualizarProgressoAlbum(0, fotosParaEnviar.length, `Preparando ${fotosParaEnviar.length} foto(s)...`);
 
             let enviadas = 0;
             let erros = 0;
@@ -1266,6 +1830,7 @@
 
             for (const [idx, foto] of fotosParaEnviar.entries()) {
                 try {
+                    atualizarProgressoAlbum(idx, fotosParaEnviar.length, `Enviando foto ${idx + 1} de ${fotosParaEnviar.length}...`);
                     previews[idx].querySelector('.preview-status').classList.add('enviando');
                     previews[idx].querySelector('.preview-status').textContent = 'Enviando...';
 
@@ -1274,15 +1839,18 @@
                     previews[idx].querySelector('.preview-status').classList.remove('enviando');
                     previews[idx].querySelector('.preview-status').textContent = 'Pronto!';
                     enviadas++;
+                    atualizarProgressoAlbum(idx + 1, fotosParaEnviar.length, `Foto ${idx + 1} de ${fotosParaEnviar.length} concluída`);
 
                 } catch (erro) {
                     console.error('Erro no upload:', erro);
                     previews[idx].querySelector('.preview-status').classList.add('erro');
                     previews[idx].querySelector('.preview-status').textContent = 'Erro';
                     erros++;
+                    atualizarProgressoAlbum(idx + 1, fotosParaEnviar.length, `Foto ${idx + 1} de ${fotosParaEnviar.length} com erro`);
                 }
             }
 
+            atualizarProgressoAlbum(fotosParaEnviar.length, fotosParaEnviar.length, `${enviadas} de ${fotosParaEnviar.length} foto(s) processada(s)`);
             const mensagem = `${enviadas} foto(s) enviadas com sucesso!${erros > 0 ? ` ${erros} erro(s).` : ''}`;
             mostrarMensagem(msg, mensagem, erros === 0 ? 'sucesso' : 'erro');
 
