@@ -28,18 +28,20 @@ Hospede o conteúdo desta pasta separadamente do site público. Mantenha os arqu
 
 O painel exige uma sessão autenticada do Supabase para acessar as áreas administrativas. O login continua usando e-mail e senha exclusivamente para o administrador; o **cadastro dos clientes nos álbuns usa telefone**.
 
-## Envio manual pelo Telegram
+## Envio automático pelo Telegram
 
-A página `relatorio.html` possui o botão **Enviar pelo Telegram**. O envio só acontece quando o administrador clica no botão; não há agendamento, webhook ou disparo em segundo plano. O endpoint `api/telegram-relatorio.js` valida a sessão do Supabase e usa a Bot API do Telegram sem expor o token no navegador.
+A página `relatorio.html` possui o botão **Enviar pelo Telegram** para um disparo manual autenticado. Além disso, a função `api/telegram-relatorio.js` gera o relatório diretamente no servidor e o envia automaticamente toda segunda-feira às **00:00 no horário de Brasília**. O cron da Vercel usa UTC, por isso o agendamento está configurado como `0 3 * * 1`.
 
-Para hospedar o Admin em Vercel ou outro ambiente compatível com funções Node, configure estas variáveis de ambiente no servidor:
+Para hospedar o Admin na Vercel, configure estas variáveis de ambiente no servidor:
 
 ```text
 TELEGRAM_BOT_TOKEN=token recebido do @BotFather
 TELEGRAM_CHAT_ID=6520427340
 SUPABASE_URL=https://tbwmsgztpyyratambgqs.supabase.co
 SUPABASE_ANON_KEY=chave pública do Supabase
+SUPABASE_SERVICE_ROLE_KEY=chave secreta do Supabase
+CRON_SECRET=senha longa e aleatória para testes autorizados
 MOTAZT_ADMIN_ORIGIN=https://seu-dominio-do-admin.com
 ```
 
-O arquivo `.env.example` contém o modelo sem credenciais reais. O token deve ser tratado como senha e nunca deve ser colocado no HTML, JavaScript público, GitHub ou ZIP distribuído. O `chat_id` configurado corresponde à conversa privada que iniciou o bot `@motazstudio_bot`.
+O arquivo `.env.example` contém o modelo sem credenciais reais. O token do Telegram e a `SUPABASE_SERVICE_ROLE_KEY` devem ser tratados como senhas e nunca devem ser colocados no HTML, JavaScript público, GitHub ou ZIP distribuído. O `chat_id` configurado corresponde à conversa privada que iniciou o bot `@motazstudio_bot`. O cron funciona somente na implantação de produção da Vercel.
