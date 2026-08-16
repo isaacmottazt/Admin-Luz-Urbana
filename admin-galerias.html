@@ -954,7 +954,7 @@
 
     <!-- Scripts necessários -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="galerias-sistema-completo.js?v=20260816-mutations1"></script>
+    <script src="galerias-sistema-completo.js?v=20260816-mutations2"></script>
 
     <script>
         // Inicializar cliente admin (ajustar conforme sua config)
@@ -1738,30 +1738,16 @@
             }
 
             try {
-                // A tabela privada real do banco é public.galerias.
-                // A criação é feita diretamente nela para não depender de RPC/cache.
-                const resultadoDireto = await adminSupabaseClient
-                    .from('galerias')
-                    .insert({
-                        cliente_nome: nome,
-                        cliente_telefone: telefone,
-                        titulo: titulo || null,
-                        status: 'ativa',
-                        total_fotos: 0,
-                        data_criacao: new Date().toISOString(),
-                        data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                        mensagem_agradecimento: mensagemAgradecimento || null,
-                        data_publicacao: dataPublicacao ? dataPublicacao.toISOString() : null,
-                        status_publicacao: dataPublicacao ? 'agendado' : 'publicado'
-                    })
-                    .select('id')
-                    .single();
-
-                if (resultadoDireto.error) {
-                    throw new Error(`Galerias: ${resultadoDireto.error.message}`);
-                }
-
-                const galeriaId = resultadoDireto.data?.id;
+                const resultadoSeguro = await GaleriaPrivada.criarGaleria(
+                    nome,
+                    telefone,
+                    titulo,
+                    {
+                        dataPublicacao: dataPublicacao ? dataPublicacao.toISOString() : null,
+                        mensagemAgradecimento
+                    }
+                );
+                const galeriaId = resultadoSeguro.galeria_id;
                 if (!galeriaId) throw new Error('O banco não retornou o ID do álbum.');
 
                 mostrarMensagem(msg, `Álbum criado. ID: ${galeriaId}`, 'sucesso');
