@@ -760,6 +760,21 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme6">
     <style>
+        .dashboard-operacao { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin:0 0 24px; }
+        .dash-card { min-height:112px; padding:16px; border:1px solid rgba(255,255,255,.1); border-radius:16px; background:linear-gradient(145deg,rgba(35,33,30,.9),rgba(18,18,17,.75)); box-shadow:0 12px 30px rgba(0,0,0,.12); }
+        .dash-card span { display:block; color:var(--texto-mudo,#999); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+        .dash-card strong { display:block; margin:10px 0 4px; color:var(--ouro-claro,#d2ad78); font-size:28px; line-height:1; }
+        .dash-card small { color:var(--texto-mudo,#888); font-size:10px; }
+        .tags-admin { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0; padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.025); }
+        .tags-admin label { display:flex; align-items:center; gap:6px; width:100%; color:var(--texto-mudo,#999); font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+        .tags-admin label svg { width:14px; color:var(--ouro-claro,#d2ad78); }
+        .tags-admin-list { display:flex; flex-wrap:wrap; gap:6px; }
+        .tag-admin-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border-radius:999px; color:#17120c; background:var(--ouro-claro,#d2ad78); font-size:10px; font-weight:700; }
+        .tag-admin-chip button { width:16px; height:16px; padding:0; border:0; border-radius:50%; color:#17120c; background:rgba(0,0,0,.12); cursor:pointer; line-height:1; }
+        .tags-admin input { flex:1; min-width:190px; padding:8px 10px; border:1px solid rgba(255,255,255,.1); border-radius:9px; color:var(--texto,#fff); background:rgba(0,0,0,.18); font-size:11px; }
+        @media (max-width:1050px) { .dashboard-operacao { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+        @media (max-width:650px) { .dashboard-operacao { grid-template-columns:repeat(2,minmax(0,1fr)); } .dash-card-status { grid-column:1/-1; } }
+
         .modal-header-actions { display:flex; align-items:center; gap:8px; }
         .ordem-ajuda { display:block; margin-top:4px; color:var(--texto-mudo,#999); font-size:10px; font-weight:400; }
         .btn-salvar-ordem { display:inline-flex; align-items:center; gap:6px; }
@@ -831,6 +846,14 @@
         <main class="conteudo">
 
             <h1>Álbuns privados</h1>
+
+            <section class="dashboard-operacao" aria-label="Resumo operacional">
+                <div class="dash-card"><span>Álbuns ativos</span><strong id="dashAlbunsAtivos">—</strong><small>disponíveis para clientes</small></div>
+                <div class="dash-card"><span>Expiram em breve</span><strong id="dashExpirando">—</strong><small>nos próximos 7 dias</small></div>
+                <div class="dash-card"><span>Total de fotos</span><strong id="dashTotalFotos">—</strong><small>registradas nos álbuns</small></div>
+                <div class="dash-card"><span>Fila de upload</span><strong id="dashFilaUploads">0</strong><small>arquivos aguardando envio</small></div>
+                <div class="dash-card dash-card-status"><span>Última atualização</span><strong id="dashAtualizadoEm">—</strong><small>dados carregados do painel</small></div>
+            </section>
 
             <!-- Abas -->
             <div class="tabs">
@@ -1082,6 +1105,63 @@
             return Number.isNaN(dataObj.getTime()) ? '—' : dataObj.toLocaleString('pt-BR');
         }
 
+        const TAGS_ADMIN_STORAGE = 'motazt_admin_tags_v1';
+
+        function lerTagsAdmin() {
+            try { return JSON.parse(localStorage.getItem(TAGS_ADMIN_STORAGE) || '{}') || {}; } catch { return {}; }
+        }
+
+        function salvarTagsAdminStorage(tags) {
+            localStorage.setItem(TAGS_ADMIN_STORAGE, JSON.stringify(tags));
+        }
+
+        function renderizarTagsAdmin(galeriaId) {
+            const todas = lerTagsAdmin();
+            const tags = Array.isArray(todas[galeriaId]) ? todas[galeriaId] : [];
+            const lista = document.getElementById(`tags-lista-${galeriaId}`);
+            if (!lista) return;
+            lista.innerHTML = tags.map(tag => `<span class="tag-admin-chip">${escaparHtmlAdmin(tag)}<button type="button" aria-label="Remover tag ${escaparAtributoAdmin(tag)}" onclick="removerTagAdmin('${galeriaId}', '${escaparAtributoAdmin(tag)}')">×</button></span>`).join('');
+        }
+
+        function teclaTagAdmin(event, galeriaId) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            const input = event.currentTarget;
+            const tag = input.value.trim().replace(/\s+/g, ' ').slice(0, 32);
+            if (!tag) return;
+            const todas = lerTagsAdmin();
+            const atuais = Array.isArray(todas[galeriaId]) ? todas[galeriaId] : [];
+            if (!atuais.some(item => item.toLowerCase() === tag.toLowerCase())) atuais.push(tag);
+            todas[galeriaId] = atuais.slice(0, 12);
+            salvarTagsAdminStorage(todas);
+            input.value = '';
+            renderizarTagsAdmin(galeriaId);
+        }
+
+        function removerTagAdmin(galeriaId, tag) {
+            const todas = lerTagsAdmin();
+            todas[galeriaId] = (todas[galeriaId] || []).filter(item => item !== tag);
+            salvarTagsAdminStorage(todas);
+            renderizarTagsAdmin(galeriaId);
+        }
+
+        function atualizarDashboardOperacao(galerias) {
+            const agora = Date.now();
+            const ativos = galerias.filter(gal => gal.status === 'ativa' && (!gal.data_expiracao || new Date(gal.data_expiracao).getTime() >= agora)).length;
+            const expirando = galerias.filter(gal => {
+                const dias = gal.data_expiracao ? Math.ceil((new Date(gal.data_expiracao).getTime() - agora) / 86400000) : 999;
+                return dias >= 0 && dias <= 7;
+            }).length;
+            const totalFotos = galerias.reduce((total, gal) => total + Number(gal.total_fotos || 0), 0);
+            const fila = Number(localStorage.getItem('motazt_upload_queue_count') || 0);
+            const set = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = String(valor); };
+            set('dashAlbunsAtivos', ativos);
+            set('dashExpirando', expirando);
+            set('dashTotalFotos', totalFotos);
+            set('dashFilaUploads', fila);
+            set('dashAtualizadoEm', new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+        }
+
         // ===== ABA 1: LISTAR GALERIAS =====
         async function carregarGalerias() {
             try {
@@ -1146,6 +1226,12 @@
                                     <div class="info-label">Código curto</div>
                                     <div class="info-value">${escaparHtmlAdmin(codigoCurto || 'Execute o SQL')}</div>
                                 </div>
+                            </div>
+
+                            <div class="tags-admin" data-tags-galeria="${gal.id}">
+                                <label><i data-lucide="tags"></i> Tags internas</label>
+                                <div class="tags-admin-list" id="tags-lista-${gal.id}"></div>
+                                <input type="text" id="tags-input-${gal.id}" placeholder="Ex.: aguardando seleção, pago, casamento" maxlength="32" onkeydown="teclaTagAdmin(event, '${gal.id}')">
                             </div>
 
                             <!-- Controles de ativação e dias -->
@@ -1214,6 +1300,8 @@
                 }).join('');
                 window.lucide?.createIcons();
                 aplicarFiltrosGalerias();
+                galerias.forEach(gal => renderizarTagsAdmin(gal.id));
+                atualizarDashboardOperacao(galerias);
                 document.querySelectorAll('[data-compartilhar-id]').forEach(botao => {
                     botao.addEventListener('click', () => {
                         compartilharGaleriaWhatsApp(
@@ -1923,6 +2011,84 @@
             selecionarFotos({ target: { files } });
         });
 
+        const UPLOAD_QUEUE_DB = 'motazt_upload_queue_v1';
+        const UPLOAD_QUEUE_STORE = 'files';
+
+        function abrirFilaUploadDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(UPLOAD_QUEUE_DB, 1);
+                request.onupgradeneeded = () => request.result.createObjectStore(UPLOAD_QUEUE_STORE, { keyPath: 'id' });
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function persistirFilaUpload(arquivos, galeriaId) {
+            if (!arquivos?.length || !galeriaId) return;
+            try {
+                const db = await abrirFilaUploadDB();
+                const tx = db.transaction(UPLOAD_QUEUE_STORE, 'readwrite');
+                const store = tx.objectStore(UPLOAD_QUEUE_STORE);
+                store.clear();
+                arquivos.forEach((file, index) => store.put({
+                    id: `${galeriaId}-${file.name}-${file.size}-${file.lastModified}-${index}`,
+                    galeriaId, name: file.name, size: file.size, type: file.type, lastModified: file.lastModified, file
+                }));
+                await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
+                localStorage.setItem('motazt_upload_queue_count', String(arquivos.length));
+                atualizarDashboardFila(arquivos.length);
+            } catch (erro) { console.warn('Fila persistente indisponível:', erro); }
+        }
+
+        async function removerArquivoDaFilaUpload(galeriaId, arquivo) {
+            try {
+                const db = await abrirFilaUploadDB();
+                const tx = db.transaction(UPLOAD_QUEUE_STORE, 'readwrite');
+                const store = tx.objectStore(UPLOAD_QUEUE_STORE);
+                const itens = await new Promise((resolve, reject) => { const req = store.getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error); });
+                const alvo = itens.find(item => item.galeriaId === galeriaId && item.name === arquivo.name && item.size === arquivo.size && item.lastModified === arquivo.lastModified);
+                if (alvo) store.delete(alvo.id);
+                await new Promise(resolve => { tx.oncomplete = resolve; tx.onerror = resolve; });
+                const restantes = itens.filter(item => item !== alvo).length;
+                localStorage.setItem('motazt_upload_queue_count', String(restantes));
+                atualizarDashboardFila(restantes);
+            } catch (erro) { console.warn('Não foi possível atualizar a fila:', erro); }
+        }
+
+        async function limparFilaUpload(galeriaId) {
+            try {
+                const db = await abrirFilaUploadDB();
+                const tx = db.transaction(UPLOAD_QUEUE_STORE, 'readwrite');
+                const store = tx.objectStore(UPLOAD_QUEUE_STORE);
+                const itens = await new Promise((resolve, reject) => { const req = store.getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error); });
+                itens.filter(item => !galeriaId || item.galeriaId === galeriaId).forEach(item => store.delete(item.id));
+                await new Promise(resolve => { tx.oncomplete = resolve; tx.onerror = resolve; });
+                const restantes = galeriaId ? itens.filter(item => item.galeriaId !== galeriaId).length : 0;
+                localStorage.setItem('motazt_upload_queue_count', String(restantes));
+                atualizarDashboardFila(restantes);
+            } catch (erro) { console.warn('Não foi possível limpar a fila:', erro); }
+        }
+
+        function atualizarDashboardFila(total) {
+            const el = document.getElementById('dashFilaUploads');
+            if (el) el.textContent = String(total || 0);
+        }
+
+        async function restaurarFilaUpload() {
+            try {
+                const db = await abrirFilaUploadDB();
+                const tx = db.transaction(UPLOAD_QUEUE_STORE, 'readonly');
+                const itens = await new Promise((resolve, reject) => { const req = tx.objectStore(UPLOAD_QUEUE_STORE).getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error); });
+                if (!itens.length) return;
+                const primeiro = itens[0];
+                document.getElementById('uploadGaleriaId').value = primeiro.galeriaId || '';
+                fotosParaEnviar = itens.map(item => item.file).filter(Boolean);
+                renderizarPreviewsUpload();
+                atualizarDashboardFila(fotosParaEnviar.length);
+                mostrarMensagem(document.getElementById('msgUpload'), `${fotosParaEnviar.length} arquivo(s) restaurado(s) da fila. Você pode retomar o envio.`, 'sucesso');
+            } catch (erro) { console.warn('Não foi possível restaurar a fila:', erro); }
+        }
+
         function validarArquivoAntesDoUpload(foto) {
             const limite = 50 * 1024 * 1024;
             const nome = String(foto?.name || '').toLowerCase();
@@ -1972,6 +2138,7 @@
                 return;
             }
 
+            await persistirFilaUpload(fotosParaEnviar, galeriaId);
             const btn = document.getElementById('btnEnviarFotos');
             btn.disabled = true;
             btn.textContent = `Enviando ${fotosParaEnviar.length} foto(s)...`;
@@ -1996,6 +2163,7 @@
                     previews[idx].querySelector('.preview-status').classList.remove('enviando');
                     previews[idx].querySelector('.preview-status').textContent = 'Pronto!';
                     enviadas++;
+                    await removerArquivoDaFilaUpload(galeriaId, foto);
                     atualizarProgressoAlbum(idx + 1, fotosParaEnviar.length, `Foto ${idx + 1} de ${fotosParaEnviar.length} concluída`);
 
                 } catch (erro) {
@@ -2020,6 +2188,7 @@
                 btn.textContent = `Tentar novamente (${fotosParaEnviar.length})`;
             } else {
                 btn.textContent = 'Enviar Fotos';
+                await limparFilaUpload(galeriaId);
                 fotosParaEnviar = [];
                 urlsPreviewUpload.forEach(url => URL.revokeObjectURL(url));
                 urlsPreviewUpload = [];
@@ -2061,6 +2230,7 @@
                     return;
                 }
                 carregarGalerias();
+                restaurarFilaUpload();
             } catch (e) {
                 console.error('Erro de sessão:', e);
                 window.location.href = 'login.html';
