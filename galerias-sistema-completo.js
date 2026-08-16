@@ -404,6 +404,8 @@ async function enviarParaUrlAssinada(upload, arquivo) {
 }
 
 async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
+    const resolvida = await chamarMutacaoAdmin({ action: 'resolve-gallery', reference: galeriaId });
+    galeriaId = resolvida.galeria_id;
     const timestamp = Date.now();
     const base = `${galeriaId}/${timestamp}-${Math.random().toString(36).slice(2, 8)}`;
     const extensaoOriginal = (arquivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
