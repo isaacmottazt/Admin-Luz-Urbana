@@ -765,6 +765,10 @@ async function obterInfoGaleria(galeriaId) {
     }
 }
 
+async function reordenarFotosAdmin(galeriaId, photoIds) {
+    return chamarMutacaoAdmin({ action: 'reorder-photos', galeriaId, photoIds });
+}
+
 // ===== EXPORTAR PARA USO =====
 // Deixa disponível globalmente no window
 window.GaleriaPrivada = {
@@ -791,5 +795,6 @@ window.GaleriaPrivada = {
     listarHistoricoDownloadsAdmin,
     deletarFoto,
     atualizarStatusGaleria,
-    obterInfoGaleria
+    obterInfoGaleria,
+    reordenarFotosAdmin
 };

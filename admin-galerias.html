@@ -760,6 +760,15 @@
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme6">
     <style>
+        .modal-header-actions { display:flex; align-items:center; gap:8px; }
+        .ordem-ajuda { display:block; margin-top:4px; color:var(--texto-mudo,#999); font-size:10px; font-weight:400; }
+        .btn-salvar-ordem { display:inline-flex; align-items:center; gap:6px; }
+        .btn-salvar-ordem svg { width:15px; height:15px; }
+        .modal-foto-item[draggable="true"] { cursor:grab; position:relative; }
+        .modal-foto-item[draggable="true"]:active { cursor:grabbing; opacity:.72; }
+        .alca-arrasto { position:absolute; top:8px; left:8px; z-index:3; display:grid; place-items:center; width:28px; height:28px; border-radius:8px; color:#fff; background:rgba(0,0,0,.62); backdrop-filter:blur(8px); pointer-events:none; }
+        .alca-arrasto svg { width:15px; height:15px; }
+
         .filtros-galerias-admin { display:flex; align-items:center; gap:10px; margin:0 0 18px; padding:10px; border:1px solid rgba(255,255,255,.1); border-radius:16px; background:rgba(20,20,20,.72); }
         .filtro-busca-admin { display:flex; align-items:center; gap:9px; flex:1; min-width:220px; padding:0 12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.035); }
         .filtro-busca-admin svg { width:16px; color:var(--ouro-claro,#d2ad78); flex:0 0 auto; }
@@ -926,8 +935,11 @@
     <div id="modalFotos" class="modal-fotos">
         <div class="modal-conteudo">
             <div class="modal-header">
-                <div class="modal-title">Fotos da Galeria</div>
-                <button class="modal-close" onclick="fecharModalFotos()" aria-label="Fechar"><i data-lucide="x"></i></button>
+                <div class="modal-title">Fotos da Galeria <small class="ordem-ajuda">Arraste para ordenar</small></div>
+                <div class="modal-header-actions">
+                    <button class="btn-acao btn-salvar-ordem" id="btnSalvarOrdemFotos" type="button" onclick="salvarOrdemFotosAdmin()" hidden><i data-lucide="save"></i> Salvar ordem</button>
+                    <button class="modal-close" onclick="fecharModalFotos()" aria-label="Fechar"><i data-lucide="x"></i></button>
+                </div>
             </div>
             <div id="modalFotosGrid" class="modal-fotos-grid"></div>
         </div>
@@ -984,7 +996,7 @@
 
     <!-- Scripts necessários -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="galerias-sistema-completo.js?v=20260816-admin-productivity9"></script>
+    <script src="galerias-sistema-completo.js?v=20260816-admin-productivity10"></script>
 
     <script>
         // Inicializar cliente admin (ajustar conforme sua config)
@@ -1323,6 +1335,7 @@
 
         // ===== MODAL DE FOTOS =====
         let galeriaAbertaNoModal = null;
+        let fotoArrastadaModal = null;
 
         async function abrirModalFotos(galeriaId) {
             galeriaAbertaNoModal = galeriaId;
@@ -1350,7 +1363,8 @@
                     grid.innerHTML = fotos.map(foto => {
                         const referencia = foto.arquivo_preview || foto.arquivo_full;
                         return `
-                        <div class="modal-foto-item">
+                        <div class="modal-foto-item" draggable="true" data-foto-id="${escaparAtributoAdmin(foto.id)}" ondragstart="iniciarArrastoFoto(event)" ondragover="event.preventDefault()" ondrop="soltarFoto(event)">
+                            <span class="alca-arrasto" title="Arrastar para ordenar"><i data-lucide="grip-vertical"></i></span>
                             <img src="${urlsAssinadas.get(referencia) || ''}" alt="Foto" loading="lazy" onerror="this.parentElement.classList.add('erro-carregamento')">
                             <button class="btn-excluir-foto" onclick='excluirFotoModal(${JSON.stringify(foto.id)}, ${JSON.stringify(foto.arquivo_preview || '')}, ${JSON.stringify(foto.arquivo_full || '')})' title="Excluir foto">Excluir</button>
                         </div>`;
@@ -1359,6 +1373,44 @@
 
             } catch (erro) {
                 console.error('Erro:', erro);
+            }
+        }
+
+        function iniciarArrastoFoto(event) {
+            fotoArrastadaModal = event.currentTarget;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', event.currentTarget.dataset.fotoId || '');
+        }
+
+        function soltarFoto(event) {
+            event.preventDefault();
+            const destino = event.currentTarget;
+            if (!fotoArrastadaModal || destino === fotoArrastadaModal) return;
+            const grid = document.getElementById('modalFotosGrid');
+            const itens = Array.from(grid.querySelectorAll('.modal-foto-item'));
+            const indiceDestino = itens.indexOf(destino);
+            const indiceOrigem = itens.indexOf(fotoArrastadaModal);
+            if (indiceOrigem < indiceDestino) destino.after(fotoArrastadaModal);
+            else destino.before(fotoArrastadaModal);
+            fotoArrastadaModal = null;
+            const botao = document.getElementById('btnSalvarOrdemFotos');
+            if (botao) botao.hidden = false;
+        }
+
+        async function salvarOrdemFotosAdmin() {
+            const ids = Array.from(document.querySelectorAll('#modalFotosGrid .modal-foto-item')).map(item => item.dataset.fotoId).filter(Boolean);
+            if (!galeriaAbertaNoModal || !ids.length) return;
+            const botao = document.getElementById('btnSalvarOrdemFotos');
+            if (botao) { botao.disabled = true; botao.textContent = 'Salvando...'; }
+            try {
+                await GaleriaPrivada.reordenarFotosAdmin(galeriaAbertaNoModal, ids);
+                if (botao) { botao.hidden = true; botao.disabled = false; botao.innerHTML = '<i data-lucide="save"></i> Salvar ordem'; }
+                window.lucide?.createIcons();
+                alert('Ordem das fotos salva.');
+                carregarFotosDaGaleria(galeriaAbertaNoModal);
+            } catch (erro) {
+                if (botao) { botao.disabled = false; botao.textContent = 'Salvar ordem'; }
+                alert(`Não foi possível salvar a ordem: ${erro?.message || 'tente novamente'}`);
             }
         }
 
@@ -1384,6 +1436,8 @@
 
         function fecharModalFotos() {
             document.getElementById('modalFotos').classList.remove('ativo');
+            const botao = document.getElementById('btnSalvarOrdemFotos');
+            if (botao) { botao.hidden = true; botao.disabled = false; }
             galeriaAbertaNoModal = null;
         }
 
