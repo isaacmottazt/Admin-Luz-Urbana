@@ -396,7 +396,7 @@ async function enviarParaUrlAssinada(upload, arquivo) {
     if (!url) throw new Error('O servidor não retornou uma URL de upload válida.');
     const resposta = await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': arquivo.type || 'application/octet-stream', 'x-upsert': 'false' },
+        headers: { 'Content-Type': arquivo.type || 'application/octet-stream' },
         body: arquivo
     });
     if (!resposta.ok) throw new Error(`Falha no upload seguro (${resposta.status}).`);
