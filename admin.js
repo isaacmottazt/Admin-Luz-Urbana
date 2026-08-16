@@ -14,6 +14,18 @@ supabase.createClient(
     supabaseKey
 );
 
+async function obterDadosAdmin(resource) {
+    const { data: { session } } = await client.auth.getSession();
+    if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
+    const resposta = await fetch(`/api/admin-content?resource=${encodeURIComponent(resource)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        credentials: 'same-origin'
+    });
+    if (!resposta.ok) throw new Error('Não foi possível carregar os dados do painel.');
+    const payload = await resposta.json();
+    return Array.isArray(payload.data) ? payload.data : [];
+}
+
 async function obterUrlsAssinadasAdmin(referencias) {
     const entradas = Array.isArray(referencias) ? referencias.filter(Boolean) : [referencias].filter(Boolean);
     if (!entradas.length) return new Map();
@@ -425,19 +437,13 @@ async function carregarGaleria(){
     galeria.innerHTML =
     "<p>Carregando...</p>";
 
-    const {
-        data,
-        error
-    } = await client
-    .from("galeria")
-    .select("*")
-    .order("ordem", {
-        ascending:true,
-        nullsFirst:false
-    })
-    .order("id", {
-        ascending:false
-    });
+    let data;
+    let error = null;
+    try {
+        data = await obterDadosAdmin('galeria');
+    } catch (erroDados) {
+        error = erroDados;
+    }
 
     if(error){
 
@@ -1006,19 +1012,13 @@ async function carregarDestaques(){
     destaqueAdmin.innerHTML =
     "<p>Carregando...</p>";
 
-    const {
-        data,
-        error
-    } = await client
-    .from("destaques")
-    .select("*")
-    .order("ordem", {
-        ascending:true,
-        nullsFirst:false
-    })
-    .order("id", {
-        ascending:false
-    });
+    let data;
+    let error = null;
+    try {
+        data = await obterDadosAdmin('destaques');
+    } catch (erroDados) {
+        error = erroDados;
+    }
 
     if(error){
         console.log(error);
