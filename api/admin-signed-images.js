@@ -49,7 +49,11 @@ module.exports = async function adminSignedImages(req, res) {
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) return json(res, 503, { error: 'Serviço de imagens não configurado.' });
+  const missing = [
+    !supabaseUrl ? 'SUPABASE_URL' : null,
+    !serviceRoleKey ? 'SUPABASE_SERVICE_ROLE_KEY' : null
+  ].filter(Boolean);
+  if (missing.length) return json(res, 503, { error: 'Serviço de imagens não configurado.', missing });
 
   const origin = req.headers.origin;
   const allowedOrigin = process.env.MOTAZT_ADMIN_ORIGIN;
