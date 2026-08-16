@@ -23,7 +23,7 @@ async function obterDadosAdmin(resource) {
         headers: { Authorization: `Bearer ${session.access_token}` },
         credentials: 'same-origin'
     });
-    if (!resposta.ok) throw new Error('Não foi possível carregar os dados do painel.');
+    if (!resposta.ok) throw new Error(`Não foi possível carregar os dados do painel (HTTP ${resposta.status}).`);
     const payload = await resposta.json();
     return Array.isArray(payload.data) ? payload.data : [];
 }
@@ -42,7 +42,7 @@ async function obterUrlsAssinadasAdmin(referencias) {
         credentials: 'same-origin',
         body: JSON.stringify({ paths: entradas, admin: true })
     });
-    if (!resposta.ok) throw new Error('Não foi possível assinar as imagens do painel.');
+    if (!resposta.ok) throw new Error(`Não foi possível assinar as imagens do painel (HTTP ${resposta.status}).`);
     const payload = await resposta.json();
     const mapa = new Map();
     (Array.isArray(payload.signed) ? payload.signed : []).forEach(item => {
@@ -451,8 +451,7 @@ async function carregarGaleria(){
 
         console.log(error);
 
-        galeria.innerHTML =
-        "<p>Erro ao carregar.</p>";
+        galeria.textContent = error?.message || 'Erro ao carregar.';
 
         return;
     }
@@ -1024,8 +1023,7 @@ async function carregarDestaques(){
 
     if(error){
         console.log(error);
-        destaqueAdmin.innerHTML =
-        "<p>Erro ao carregar.</p>";
+        destaqueAdmin.textContent = error?.message || 'Erro ao carregar.';
         return;
     }
 
