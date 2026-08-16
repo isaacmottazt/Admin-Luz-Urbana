@@ -1095,7 +1095,7 @@
         function obterLinkAlbumAdmin(id, codigoCurto = '') {
             const sitePublico = window.MOTAZT_SITE_URL || SITE_PUBLICO_PADRAO;
             const parametro = codigoCurto ? `codigo=${encodeURIComponent(codigoCurto)}` : `id=${encodeURIComponent(id)}`;
-            return `${sitePublico}/galeria-privada?${parametro}`;
+            return `${sitePublico}/album?${parametro}`;
         }
 
         function formatarDataAdmin(data) {
