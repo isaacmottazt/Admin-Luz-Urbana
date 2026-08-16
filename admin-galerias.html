@@ -1201,7 +1201,10 @@
                                     <div class="galeria-nome">${gal.titulo || primeiroNome}</div>
                                     <div class="galeria-id">ID: ${gal.id.substring(0, 12)}...</div>
                                 </div>
-                                <span class="galeria-status ${statusVisual}">${statusVisual.toUpperCase()}</span>
+                                <div class="galeria-header-right">
+                                    <span class="galeria-status ${statusVisual}">${statusVisual.toUpperCase()}</span>
+                                    <button type="button" class="btn-ver-mais" aria-expanded="false" aria-controls="detalhes-${gal.id}" onclick="alternarDetalhesAlbum('${gal.id}', this)"><i data-lucide="more-horizontal"></i><span>Ver mais</span></button>
+                                </div>
                             </div>
 
                             <div class="galeria-info">
@@ -1227,6 +1230,7 @@
                                 </div>
                             </div>
 
+                            <div class="album-detalhes" id="detalhes-${gal.id}" hidden>
                             <!-- Controles de ativação e dias -->
                             <div class="galeria-controls">
                                 <div class="control-group">
@@ -1269,6 +1273,7 @@
                                 <label><i data-lucide="tags"></i> Tags internas</label>
                                 <div class="tags-admin-list" id="tags-lista-${gal.id}"></div>
                                 <input type="text" id="tags-input-${gal.id}" placeholder="Ex.: aguardando seleção, pago, casamento" maxlength="32" onkeydown="teclaTagAdmin(event, '${gal.id}')">
+                            </div>
                             </div>
 
                             <!-- Galeria de fotos -->
@@ -1367,6 +1372,19 @@
                 console.error('Erro ao duplicar álbum:', erro);
                 alert(`Não foi possível duplicar o álbum: ${erro?.message || 'tente novamente'}`);
             }
+        }
+
+        function alternarDetalhesAlbum(galeriaId, botao) {
+            const painel = document.getElementById(`detalhes-${galeriaId}`);
+            if (!painel) return;
+            const aberto = !painel.hidden;
+            painel.hidden = aberto;
+            botao.setAttribute('aria-expanded', String(!aberto));
+            const texto = botao.querySelector('span');
+            if (texto) texto.textContent = aberto ? 'Ver mais' : 'Ver menos';
+            botao.classList.toggle('aberto', !aberto);
+            if (!aberto) painel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            window.lucide?.createIcons();
         }
 
         // ===== CARREGAR FOTOS DA GALERIA =====
