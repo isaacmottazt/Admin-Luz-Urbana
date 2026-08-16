@@ -390,17 +390,31 @@ function obterUrlPublicaStorage(caminho) {
     return supabaseClient.storage.from('fotos').getPublicUrl(caminho).data.publicUrl;
 }
 
-async function enviarParaUrlAssinada(upload, arquivo) {
+async function enviarParaUrlAssinada(upload, arquivo, tentativa = 0) {
     const url = upload?.signedUrl || (upload?.token
         ? `${SUPABASE_URL}/storage/v1/object/upload/sign/fotos/${encodeURIComponent(upload.path).replace(/%2F/g, '/')}?token=${encodeURIComponent(upload.token)}`
         : '');
     if (!url) throw new Error('O servidor não retornou uma URL de upload válida.');
-    const resposta = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': arquivo.type || 'application/octet-stream' },
-        body: arquivo
-    });
-    if (!resposta.ok) throw new Error(`Falha no upload seguro (${resposta.status}).`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180000);
+    try {
+        const resposta = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': arquivo.type || 'application/octet-stream' },
+            body: arquivo,
+            signal: controller.signal
+        });
+        if (!resposta.ok) throw new Error(`Falha no upload seguro (${resposta.status}).`);
+    } catch (erro) {
+        if (tentativa < 1 && (erro?.name === 'AbortError' || !erro?.message?.includes('(4'))) {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            return enviarParaUrlAssinada(upload, arquivo, tentativa + 1);
+        }
+        if (erro?.name === 'AbortError') throw new Error('O upload demorou mais de 3 minutos. Verifique a conexão e tente novamente.');
+        throw erro;
+    } finally {
+        clearTimeout(timeout);
+    }
 }
 
 async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
@@ -427,10 +441,10 @@ async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
             chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoOriginal }),
             chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoPreview })
         ]);
-        await Promise.all([
-            enviarParaUrlAssinada(uploadOriginal, arquivo),
-            enviarParaUrlAssinada(uploadPreview, preview)
-        ]);
+        // No celular, enviar os dois arquivos em paralelo pode deixar uma conexão presa.
+        // O envio sequencial reduz falhas intermitentes e mantém o progresso determinístico.
+        await enviarParaUrlAssinada(uploadOriginal, arquivo);
+        await enviarParaUrlAssinada(uploadPreview, preview);
         const resposta = await chamarMutacaoAdmin({
             action: 'finalize-photo',
             galeriaId,
