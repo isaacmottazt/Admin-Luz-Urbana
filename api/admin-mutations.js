@@ -120,7 +120,18 @@ async function prepareUpload(req, res, base, key, body) {
   }
   const token = data?.token || data?.data?.token;
   const rawUrl = data?.url || data?.signedURL || data?.signedUrl || data?.data?.url || '';
-  const signedUrl = rawUrl.startsWith('/') ? `${base.replace(/\/$/, '')}${rawUrl}` : rawUrl;
+  let signedUrl = rawUrl;
+  if (signedUrl.startsWith('/')) {
+    signedUrl = `${base.replace(/\/$/, '')}${signedUrl.startsWith('/storage/v1/') ? signedUrl : `/storage/v1${signedUrl}`}`;
+  } else if (signedUrl) {
+    try {
+      const parsed = new URL(signedUrl);
+      if (parsed.origin === new URL(base).origin && parsed.pathname.startsWith('/object/')) {
+        parsed.pathname = `/storage/v1${parsed.pathname}`;
+        signedUrl = parsed.toString();
+      }
+    } catch {}
+  }
   if (!token && !signedUrl) return json(res, 502, { error: 'O Storage não retornou uma URL de upload válida.' });
   return json(res, 200, { path, token, signedUrl });
 }
