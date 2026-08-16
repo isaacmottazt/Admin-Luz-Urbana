@@ -9,13 +9,13 @@
     }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/html/index.html" },
-    { "source": "/index", "destination": "/html/index.html" },
-    { "source": "/admin-galerias", "destination": "/html/admin-galerias.html" },
-    { "source": "/relatorio", "destination": "/html/relatorio.html" },
-    { "source": "/diagnostico-album", "destination": "/html/diagnostico-album.html" },
-    { "source": "/album", "destination": "/html/album.html" },
-    { "source": "/galeria-privada", "destination": "/html/album.html" }
+    { "source": "/", "destination": "/html/index" },
+    { "source": "/index", "destination": "/html/index" },
+    { "source": "/admin-galerias", "destination": "/html/admin-galerias" },
+    { "source": "/relatorio", "destination": "/html/relatorio" },
+    { "source": "/diagnostico-album", "destination": "/html/diagnostico-album" },
+    { "source": "/album", "destination": "/html/album" },
+    { "source": "/galeria-privada", "destination": "/html/album" }
   ],
   "crons": [
     {
