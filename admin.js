@@ -14,6 +14,29 @@ supabase.createClient(
     supabaseKey
 );
 
+async function obterUrlsAssinadasAdmin(referencias) {
+    const entradas = Array.isArray(referencias) ? referencias.filter(Boolean) : [referencias].filter(Boolean);
+    if (!entradas.length) return new Map();
+    const { data: { session } } = await client.auth.getSession();
+    if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
+    const resposta = await fetch('/api/admin-signed-images', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ paths: entradas })
+    });
+    if (!resposta.ok) throw new Error('Não foi possível assinar as imagens do painel.');
+    const payload = await resposta.json();
+    const mapa = new Map();
+    (Array.isArray(payload.signed) ? payload.signed : []).forEach(item => {
+        if (item?.path && item?.signedUrl) mapa.set(item.path, item.signedUrl);
+    });
+    return new Map(entradas.map(item => [item, mapa.get(item) || '']));
+}
+
 /* ======================================
    VERIFICAR LOGIN
 ====================================== */
@@ -428,6 +451,15 @@ async function carregarGaleria(){
 
     galeria.innerHTML = "";
 
+    let urlsAssinadas = new Map();
+    try {
+        urlsAssinadas = await obterUrlsAssinadasAdmin(data.flatMap(imagem => [imagem.imagem_preview, imagem.imagem_url]));
+    } catch (erroImagens) {
+        console.error('Erro ao assinar imagens da galeria:', erroImagens);
+        galeria.innerHTML = '<p>Não foi possível carregar as imagens com segurança.</p>';
+        return;
+    }
+
     data.forEach((imagem, index) => {
 
         const formatoAtual =
@@ -447,8 +479,8 @@ async function carregarGaleria(){
             <div class="foto-wrap foto-wrap--${formatoAtual}">
                 <img
                 class="foto-imagem-admin"
-                src="${imagem.imagem_preview || imagem.imagem_url}"
-                data-full="${imagem.imagem_url}"
+                src="${urlsAssinadas.get(imagem.imagem_preview || imagem.imagem_url) || urlsAssinadas.get(imagem.imagem_url) || ''}"
+                data-full="${urlsAssinadas.get(imagem.imagem_url) || ''}"
                 alt="Foto"
                 loading="lazy"
                 decoding="async">
@@ -498,7 +530,7 @@ async function carregarGaleria(){
 
         // Abrir lightbox ao tocar/clicar na foto
         imagemElemento.addEventListener("click", () => {
-            abrirLightbox(imagem.imagem_url);
+            abrirLightbox(urlsAssinadas.get(imagem.imagem_url) || imagemElemento.dataset.full || '');
         });
 
         div.querySelector(".foto-formato")
@@ -1003,6 +1035,15 @@ async function carregarDestaques(){
 
     destaqueAdmin.innerHTML = "";
 
+    let urlsAssinadas = new Map();
+    try {
+        urlsAssinadas = await obterUrlsAssinadasAdmin(data.map(imagem => imagem.imagem_url));
+    } catch (erroImagens) {
+        console.error('Erro ao assinar destaques:', erroImagens);
+        destaqueAdmin.innerHTML = '<p>Não foi possível carregar os destaques com segurança.</p>';
+        return;
+    }
+
     data.forEach((imagem) => {
 
         const div = document.createElement("div");
@@ -1018,7 +1059,8 @@ async function carregarDestaques(){
 
             <div class="foto-wrap foto-wrap--quadrado">
                 <img
-                src="${imagem.imagem_url}"
+                src="${urlsAssinadas.get(imagem.imagem_url) || ''}"
+                data-full="${urlsAssinadas.get(imagem.imagem_url) || ''}"
                 alt="Foto em destaque"
                 loading="lazy">
             </div>
@@ -1035,7 +1077,7 @@ async function carregarDestaques(){
 
         div.querySelector(".foto-wrap img")
         .addEventListener("click", () => {
-            abrirLightbox(imagem.imagem_url);
+            abrirLightbox(urlsAssinadas.get(imagem.imagem_url) || '');
         });
 
         ativarArrastarDestaque(div);

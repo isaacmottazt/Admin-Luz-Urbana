@@ -15,6 +15,23 @@ const SUPABASE_URL = "https://tbwmsgztpyyratambgqs.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+async function obterUrlsAssinadasAdmin(referencias) {
+    const entradas = Array.isArray(referencias) ? referencias.filter(Boolean) : [referencias].filter(Boolean);
+    if (!entradas.length) return new Map();
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
+    const resposta = await fetch('/api/admin-signed-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        credentials: 'same-origin',
+        body: JSON.stringify({ paths: entradas })
+    });
+    if (!resposta.ok) throw new Error('Não foi possível assinar as imagens do painel.');
+    const payload = await resposta.json();
+    const mapa = new Map((Array.isArray(payload.signed) ? payload.signed : []).map(item => [item.path, item.signedUrl]));
+    return new Map(entradas.map(item => [item, mapa.get(item) || '']));
+}
+
 const CAMPOS_GALERIA_PUBLICA = 'id, codigo_curto, titulo, status, total_fotos, data_criacao, data_expiracao, mensagem_agradecimento, data_publicacao, status_publicacao';
 const CAMPOS_FOTO_PUBLICA = 'id, galeria_id, arquivo_preview, arquivo_full, favorita, posicao';
 const CAMPOS_MENSAGEM_PUBLICA = 'id, galeria_id, autor, mensagem, data_criacao';

@@ -1211,13 +1211,18 @@
                     return;
                 }
 
-                // Mostrar apenas 4 primeiras fotos como preview
-                container.innerHTML = fotos.slice(0, 4).map(foto => `
+                // Mostrar apenas 4 primeiras fotos como preview, usando URLs assinadas.
+                const fotosPreview = fotos.slice(0, 4);
+                const urlsAssinadas = await obterUrlsAssinadasAdmin(fotosPreview.map(foto => foto.arquivo_preview || foto.arquivo_full));
+                container.innerHTML = fotosPreview.map(foto => {
+                    const referencia = foto.arquivo_preview || foto.arquivo_full;
+                    const urlAssinada = urlsAssinadas.get(referencia) || '';
+                    return `
                     <div class="foto-thumb">
-                        <img src="${foto.arquivo_preview}" alt="Foto" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='">
+                        <img src="${urlAssinada}" alt="Foto" loading="lazy" onerror="this.parentElement.classList.add('erro-carregamento')">
                         ${foto.favorita ? '<div class="foto-favorita" title="Favorita"><i data-lucide="heart"></i></div>' : ''}
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
                 window.lucide?.createIcons();
 
                 if (fotos.length > 4) {
@@ -1257,12 +1262,16 @@
                 if (!fotos || fotos.length === 0) {
                     grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--texto-mudo);">Nenhuma foto nesta galeria</div>';
                 } else {
-                    grid.innerHTML = fotos.map(foto => `
+                    const referencias = fotos.map(foto => foto.arquivo_preview || foto.arquivo_full);
+                    const urlsAssinadas = await obterUrlsAssinadasAdmin(referencias);
+                    grid.innerHTML = fotos.map(foto => {
+                        const referencia = foto.arquivo_preview || foto.arquivo_full;
+                        return `
                         <div class="modal-foto-item">
-                            <img src="${foto.arquivo_preview}" alt="Foto" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjwvc3ZnPg=='">
+                            <img src="${urlsAssinadas.get(referencia) || ''}" alt="Foto" loading="lazy" onerror="this.parentElement.classList.add('erro-carregamento')">
                             <button class="btn-excluir-foto" onclick='excluirFotoModal(${JSON.stringify(foto.id)}, ${JSON.stringify(foto.arquivo_preview || '')}, ${JSON.stringify(foto.arquivo_full || '')})' title="Excluir foto">Excluir</button>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                 }
 
             } catch (erro) {
