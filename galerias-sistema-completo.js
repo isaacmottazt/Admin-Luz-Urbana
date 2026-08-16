@@ -16,6 +16,20 @@ const SUPABASE_ANON_KEY = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
 const ADMIN_API_ORIGIN = 'https://motazt-studio.vercel.app';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+async function chamarMutacaoAdmin(payload) {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session?.access_token) throw new Error('Sessão administrativa expirada. Faça login novamente.');
+    const resposta = await fetch(`${ADMIN_API_ORIGIN}/api/admin-mutations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+    });
+    const dados = await resposta.json().catch(() => null);
+    if (!resposta.ok) throw new Error(dados?.error || 'A operação administrativa falhou.');
+    return dados;
+}
+
 async function obterUrlsAssinadasAdmin(referencias) {
     const entradas = Array.isArray(referencias) ? referencias.filter(Boolean) : [referencias].filter(Boolean);
     if (!entradas.length) return new Map();
@@ -158,38 +172,21 @@ async function consultarFotosPublicas(galeriaId) {
  */
 async function criarGaleria(clienteNome, clienteTelefone, titulo = '', opcoes = {}) {
     try {
-        const dataCriacao = new Date();
-        const dataExpiracao = new Date(dataCriacao);
-        dataExpiracao.setDate(dataExpiracao.getDate() + 30);
-        const dataPublicacao = opcoes.dataPublicacao ? new Date(opcoes.dataPublicacao) : null;
-        const statusPublicacao = dataPublicacao && dataPublicacao > dataCriacao ? 'agendado' : 'publicado';
-
-        const { data, error } = await supabaseClient
-            .from('galerias')
-            .insert({
-                cliente_nome: clienteNome,
-                cliente_telefone: clienteTelefone,
-                titulo: titulo || null,
-                status: 'ativa',
-                total_fotos: 0,
-                data_criacao: dataCriacao.toISOString(),
-                data_expiracao: dataExpiracao.toISOString(),
-                mensagem_agradecimento: opcoes.mensagemAgradecimento || null,
-                data_publicacao: dataPublicacao ? dataPublicacao.toISOString() : null,
-                status_publicacao: statusPublicacao
-            })
-            .select('id')
-            .single();
-
-        if (error) throw error;
-        if (!data?.id) throw new Error('O banco não retornou o ID do álbum criado.');
-
+        const resposta = await chamarMutacaoAdmin({
+            action: 'create-gallery',
+            clienteNome,
+            clienteTelefone,
+            titulo,
+            dataPublicacao: opcoes.dataPublicacao || null,
+            mensagemAgradecimento: opcoes.mensagemAgradecimento || ''
+        });
+        if (!resposta?.galeria_id) throw new Error('O servidor não retornou o ID do álbum criado.');
         return {
             sucesso: true,
-            galeria_id: data.id,
-            mensagem: 'Álbum criado! Envie o link ao cliente pelo WhatsApp.'
+            galeria_id: resposta.galeria_id,
+            galeria: resposta.galeria,
+            mensagem: resposta.mensagem || 'Álbum criado! Envie o link ao cliente pelo WhatsApp.'
         };
-
     } catch (erro) {
         console.error('Erro ao criar galeria:', erro);
         throw erro;
@@ -392,81 +389,50 @@ function obterUrlPublicaStorage(caminho) {
     return supabaseClient.storage.from('fotos').getPublicUrl(caminho).data.publicUrl;
 }
 
+async function enviarParaUrlAssinada(upload, arquivo) {
+    const url = upload?.signedUrl || (upload?.token
+        ? `${SUPABASE_URL}/storage/v1/object/upload/sign/fotos/${encodeURIComponent(upload.path).replace(/%2F/g, '/')}?token=${encodeURIComponent(upload.token)}`
+        : '');
+    if (!url) throw new Error('O servidor não retornou uma URL de upload válida.');
+    const resposta = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': arquivo.type || 'application/octet-stream', 'x-upsert': 'false' },
+        body: arquivo
+    });
+    if (!resposta.ok) throw new Error(`Falha no upload seguro (${resposta.status}).`);
+}
+
 async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
-    let caminhoOriginal = '';
-    let caminhoPreview = '';
+    const timestamp = Date.now();
+    const base = `${galeriaId}/${timestamp}-${Math.random().toString(36).slice(2, 8)}`;
+    const extensaoOriginal = (arquivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const caminhoOriginal = `${base}/original.${extensaoOriginal}`;
+    const caminhoPreview = `${base}/preview.webp`;
     try {
-        const timestamp = Date.now();
-        const base = `${galeriaId}/${timestamp}-${Math.random().toString(36).slice(2, 8)}`;
-        const extensaoOriginal = (arquivo.name.split('.').pop() || 'jpg').toLowerCase();
-        caminhoOriginal = `${base}/original.${extensaoOriginal}`;
-        caminhoPreview = `${base}/preview.webp`;
         const preview = await criarArquivoPreview(arquivo);
-
         const [uploadOriginal, uploadPreview] = await Promise.all([
-            supabaseClient.storage.from('fotos').upload(caminhoOriginal, arquivo, {
-                contentType: arquivo.type || 'application/octet-stream',
-                cacheControl: '31536000',
-                upsert: false
-            }),
-            supabaseClient.storage.from('fotos').upload(caminhoPreview, preview, {
-                contentType: preview.type,
-                cacheControl: '31536000',
-                upsert: false
-            })
+            chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoOriginal }),
+            chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoPreview })
         ]);
-
-        if (uploadOriginal.error || uploadPreview.error) {
-            await supabaseClient.storage.from('fotos').remove([caminhoOriginal, caminhoPreview]);
-            throw new Error(uploadOriginal.error?.message || uploadPreview.error?.message || 'Falha ao enviar a imagem.');
-        }
-
-        const { count: totalAtual } = await supabaseClient
-            .from('fotos')
-            .select('id', { count: 'exact', head: true })
-            .eq('galeria_id', galeriaId);
-        const proximaPosicao = (totalAtual || 0) + 1;
-        const urlOriginal = obterUrlPublicaStorage(caminhoOriginal);
-        const urlPreview = obterUrlPublicaStorage(caminhoPreview);
-
-        const { data: fotoRecord, error: erroFoto } = await supabaseClient
-            .from('fotos')
-            .insert({
-                galeria_id: galeriaId,
-                arquivo_preview: urlPreview,
-                arquivo_full: urlOriginal,
-                posicao: proximaPosicao
-            })
-            .select('id')
-            .single();
-
-        if (erroFoto) {
-            await supabaseClient.storage.from('fotos').remove([caminhoOriginal, caminhoPreview]);
-            throw erroFoto;
-        }
-
-        const { count: totalFotos } = await supabaseClient
-            .from('fotos')
-            .select('id', { count: 'exact', head: true })
-            .eq('galeria_id', galeriaId);
-
-        await supabaseClient
-            .from('galerias')
-            .update({ total_fotos: totalFotos || 0 })
-            .eq('id', galeriaId);
-
+        await Promise.all([
+            enviarParaUrlAssinada(uploadOriginal, arquivo),
+            enviarParaUrlAssinada(uploadPreview, preview)
+        ]);
+        const resposta = await chamarMutacaoAdmin({
+            action: 'finalize-photo',
+            galeriaId,
+            originalPath: caminhoOriginal,
+            previewPath: caminhoPreview
+        });
         return {
             sucesso: true,
-            foto_id: fotoRecord.id,
-            url_preview: urlPreview,
-            url_full: urlOriginal,
-            mensagem: 'Foto original e preview enviados com sucesso!'
+            foto_id: resposta.foto_id,
+            url_preview: caminhoPreview,
+            url_full: caminhoOriginal,
+            mensagem: resposta.mensagem || 'Foto original e preview enviados com sucesso!'
         };
     } catch (erro) {
-        console.error('Erro ao fazer upload:', erro);
-        if (caminhoOriginal || caminhoPreview) {
-            await supabaseClient.storage.from('fotos').remove([caminhoOriginal, caminhoPreview].filter(Boolean));
-        }
+        console.error('Erro ao fazer upload seguro:', erro);
         throw erro;
     }
 }

@@ -67,7 +67,9 @@ module.exports = async function adminSignedImages(req, res) {
     headers: { apikey: serviceRoleKey, Authorization: `Bearer ${userToken}` }
   });
   const user = await userResponse.json().catch(() => null);
-  if (!userResponse.ok || user?.app_metadata?.role !== 'admin') return json(res, 403, { error: 'Acesso administrativo necessário.' });
+  if (!userResponse.ok || !user?.id) return json(res, 403, { error: 'Sessão administrativa inválida ou expirada.' });
+  const allowedEmail = String(process.env.MOTAZT_ADMIN_EMAIL || '').trim().toLowerCase();
+  if (allowedEmail && String(user.email || '').toLowerCase() !== allowedEmail) return json(res, 403, { error: 'Acesso administrativo necessário.' });
 
   let body = req.body;
   if (typeof body === 'string') {
