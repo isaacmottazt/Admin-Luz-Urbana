@@ -572,3 +572,152 @@ button, input, select { font-family: var(--body); }
 .galeria-preview-acao .btn-acao:disabled { opacity: .5; cursor: wait; }
 .status-galeria-preview { min-height: 0; margin: -12px 0 16px; color: var(--steel); font-family: var(--sans); font-size: .76rem; text-align: right; }
 @media (max-width: 640px) { .galeria-topo-acoes { align-items: flex-start; gap: 14px; } .galeria-preview-acao { width: 100%; justify-content: flex-start; } .status-galeria-preview { text-align: left; } }
+
+/* =========================================================
+   REFINO VISUAL — ÁLBUNS PRIVADOS ADMIN
+   Mantém a paleta existente: ink, ink-soft, steel e gold.
+========================================================= */
+.dashboard-operacao {
+    grid-template-columns: repeat(5, minmax(150px, 1fr)) !important;
+    gap: 14px !important;
+    margin: 0 0 30px !important;
+}
+
+.dash-card {
+    min-height: 128px !important;
+    padding: 20px !important;
+    border-color: rgba(138,165,179,.18) !important;
+    border-radius: var(--radius, 14px) !important;
+    background: linear-gradient(145deg, rgba(28,34,37,.96), rgba(11,13,14,.96)) !important;
+    box-shadow: 0 16px 34px rgba(0,0,0,.18) !important;
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease !important;
+}
+
+.dash-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(210,173,120,.42) !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,.26) !important;
+}
+
+.dash-card strong { font-size: 2rem !important; letter-spacing: -.04em; }
+.dash-card-status strong { font-size: 1.45rem !important; letter-spacing: .02em; }
+
+.filtros-galerias-admin {
+    position: sticky;
+    top: 82px;
+    z-index: 5;
+    margin-bottom: 22px !important;
+    padding: 12px !important;
+    border-color: rgba(138,165,179,.22) !important;
+    border-radius: 15px !important;
+    background: rgba(13,16,18,.92) !important;
+    box-shadow: 0 14px 30px rgba(0,0,0,.2) !important;
+    backdrop-filter: blur(16px);
+}
+
+.filtro-busca-admin { min-height: 44px; border-radius: 10px !important; }
+#filtroStatusGalerias, .btn-filtro-limpar { min-height: 44px !important; border-radius: 10px !important; }
+
+.galeria-item {
+    position: relative;
+    padding: 28px !important;
+    border-radius: 20px !important;
+    background: linear-gradient(145deg, rgba(19,24,26,.98), rgba(10,12,13,.98)) !important;
+    box-shadow: 0 18px 42px rgba(0,0,0,.18) !important;
+    overflow: hidden;
+}
+
+.galeria-item::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--steel), var(--ouro-claro, #d2ad78), transparent);
+    opacity: .8;
+}
+
+.galeria-item:hover { transform: translateY(-2px); box-shadow: 0 24px 50px rgba(0,0,0,.26) !important; }
+.galeria-header-item { margin-bottom: 20px !important; padding-bottom: 18px !important; }
+.galeria-nome { font-size: clamp(1.35rem, 2.5vw, 1.8rem) !important; font-weight: 600 !important; }
+.galeria-id { margin-top: 6px; opacity: .7; }
+.galeria-status { padding: 7px 11px !important; border-radius: 999px !important; font-size: .62rem !important; letter-spacing: .12em; }
+
+.galeria-info {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 18px !important;
+    padding: 8px !important;
+    border: 1px solid rgba(138,165,179,.14) !important;
+    border-radius: 16px !important;
+    background: rgba(4,6,7,.72) !important;
+}
+
+.info-item {
+    min-height: 92px !important;
+    padding: 16px !important;
+    border: 1px solid rgba(255,255,255,.045) !important;
+    border-radius: 11px !important;
+    background: rgba(255,255,255,.025) !important;
+}
+
+.info-label { font-size: .62rem !important; letter-spacing: .13em !important; }
+.info-value { margin-top: 8px !important; font-size: .92rem !important; }
+
+.tags-admin {
+    margin: 0 0 18px !important;
+    border-color: rgba(210,173,120,.13) !important;
+    background: rgba(210,173,120,.035) !important;
+}
+
+.galeria-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    margin-bottom: 18px !important;
+    padding: 18px !important;
+    border-radius: 16px !important;
+    background: rgba(4,6,7,.68) !important;
+    border-color: rgba(138,165,179,.13) !important;
+}
+
+.galeria-controls .control-group { padding: 0 !important; }
+.galeria-controls .control-group label { margin-bottom: 7px !important; font-size: .62rem !important; letter-spacing: .1em; }
+.galeria-controls .control-group input,
+.galeria-controls .control-group select { min-height: 46px !important; border-radius: 10px !important; }
+.galeria-controls .btn-salvar-control { grid-column: 1 / -1; min-height: 46px !important; border-radius: 10px !important; }
+
+.galeria-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 8px !important;
+    padding-top: 4px;
+}
+
+.galeria-actions .btn-acao {
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-size: .68rem !important;
+}
+
+@media (max-width: 1050px) {
+    .dashboard-operacao { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 850px) {
+    .filtros-galerias-admin { position: static; }
+    .galeria-info { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .galeria-controls { grid-template-columns: 1fr !important; }
+    .galeria-controls .btn-salvar-control { grid-column: auto; }
+    .galeria-actions { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+    .dashboard-operacao { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
+    .dash-card { min-height: 104px !important; padding: 14px !important; }
+    .dash-card strong { font-size: 1.55rem !important; }
+    .dash-card-status { grid-column: 1 / -1; }
+    .galeria-item { padding: 20px 16px !important; border-radius: 17px !important; }
+    .galeria-info { gap: 6px !important; padding: 6px !important; }
+    .info-item { min-height: 82px !important; padding: 13px !important; }
+    .galeria-actions .btn-acao { padding: 8px 7px !important; font-size: .62rem !important; }
+}
