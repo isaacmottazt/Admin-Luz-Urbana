@@ -721,3 +721,46 @@ button, input, select { font-family: var(--body); }
     .info-item { min-height: 82px !important; padding: 13px !important; }
     .galeria-actions .btn-acao { padding: 8px 7px !important; font-size: .62rem !important; }
 }
+
+/* Ordem reorganizada: informações → controle → publicação → tags → fotos */
+.galeria-controls,
+.publicacao-controls,
+.tags-admin {
+    position: relative;
+}
+
+.galeria-controls::before,
+.publicacao-controls::before {
+    display: block;
+    grid-column: 1 / -1;
+    margin-bottom: 2px;
+    color: var(--steel);
+    font-family: var(--sans);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+}
+
+.galeria-controls::before { content: 'Controle do álbum'; }
+.publicacao-controls::before { content: 'Publicação e mensagem'; }
+
+.publicacao-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+    padding: 18px;
+    border: 1px solid rgba(138,165,179,.13);
+    border-radius: 16px;
+    background: rgba(4,6,7,.68);
+}
+
+.publicacao-controls .btn-salvar-control { grid-column: 1 / -1; min-height: 46px; border-radius: 10px; }
+.publicacao-controls .publicacao-hint { grid-column: 1 / -1; margin: 0; }
+
+@media (max-width: 850px) {
+    .publicacao-controls { grid-template-columns: 1fr; }
+    .publicacao-controls .btn-salvar-control,
+    .publicacao-controls .publicacao-hint { grid-column: auto; }
+}

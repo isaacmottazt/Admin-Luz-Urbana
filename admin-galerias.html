@@ -847,14 +847,6 @@
 
             <h1>Álbuns privados</h1>
 
-            <section class="dashboard-operacao" aria-label="Resumo operacional">
-                <div class="dash-card"><span>Álbuns ativos</span><strong id="dashAlbunsAtivos">—</strong><small>disponíveis para clientes</small></div>
-                <div class="dash-card"><span>Expiram em breve</span><strong id="dashExpirando">—</strong><small>nos próximos 7 dias</small></div>
-                <div class="dash-card"><span>Total de fotos</span><strong id="dashTotalFotos">—</strong><small>registradas nos álbuns</small></div>
-                <div class="dash-card"><span>Fila de upload</span><strong id="dashFilaUploads">0</strong><small>arquivos aguardando envio</small></div>
-                <div class="dash-card dash-card-status"><span>Última atualização</span><strong id="dashAtualizadoEm">—</strong><small>dados carregados do painel</small></div>
-            </section>
-
             <!-- Abas -->
             <div class="tabs">
                 <button class="tab-btn ativo" onclick="mudarAba('listar', this)"><i data-lucide="layout-grid"></i> Listar álbuns</button>
@@ -864,6 +856,13 @@
 
             <!-- ===== ABA 1: LISTAR GALERIAS ===== -->
             <div id="tabListar" class="tab-content ativo">
+                <section class="dashboard-operacao" aria-label="Resumo operacional">
+                    <div class="dash-card"><span>Álbuns ativos</span><strong id="dashAlbunsAtivos">—</strong><small>disponíveis para clientes</small></div>
+                    <div class="dash-card"><span>Expiram em breve</span><strong id="dashExpirando">—</strong><small>nos próximos 7 dias</small></div>
+                    <div class="dash-card"><span>Total de fotos</span><strong id="dashTotalFotos">—</strong><small>registradas nos álbuns</small></div>
+                    <div class="dash-card"><span>Fila de upload</span><strong id="dashFilaUploads">0</strong><small>arquivos aguardando envio</small></div>
+                    <div class="dash-card dash-card-status"><span>Última atualização</span><strong id="dashAtualizadoEm">—</strong><small>dados carregados do painel</small></div>
+                </section>
                 <div class="filtros-galerias-admin" role="search" aria-label="Filtrar álbuns">
                     <div class="filtro-busca-admin">
                         <i data-lucide="search"></i>
@@ -1228,12 +1227,6 @@
                                 </div>
                             </div>
 
-                            <div class="tags-admin" data-tags-galeria="${gal.id}">
-                                <label><i data-lucide="tags"></i> Tags internas</label>
-                                <div class="tags-admin-list" id="tags-lista-${gal.id}"></div>
-                                <input type="text" id="tags-input-${gal.id}" placeholder="Ex.: aguardando seleção, pago, casamento" maxlength="32" onkeydown="teclaTagAdmin(event, '${gal.id}')">
-                            </div>
-
                             <!-- Controles de ativação e dias -->
                             <div class="galeria-controls">
                                 <div class="control-group">
@@ -1270,6 +1263,12 @@
                                     <textarea id="mensagem-agradecimento-${gal.id}" rows="2" maxlength="1000" placeholder="Obrigado por confiar no Motazt Studio.">${escaparHtmlAdmin(gal.mensagem_agradecimento || '')}</textarea>
                                 </div>
                                 <p class="publicacao-hint">O álbum agendado só ficará disponível depois da data definida. O bloqueio também é verificado no momento da abertura.</p>
+                            </div>
+
+                            <div class="tags-admin" data-tags-galeria="${gal.id}">
+                                <label><i data-lucide="tags"></i> Tags internas</label>
+                                <div class="tags-admin-list" id="tags-lista-${gal.id}"></div>
+                                <input type="text" id="tags-input-${gal.id}" placeholder="Ex.: aguardando seleção, pago, casamento" maxlength="32" onkeydown="teclaTagAdmin(event, '${gal.id}')">
                             </div>
 
                             <!-- Galeria de fotos -->
