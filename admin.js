@@ -14,10 +14,12 @@ supabase.createClient(
     supabaseKey
 );
 
+const ADMIN_API_ORIGIN = 'https://motazt-studio.vercel.app';
+
 async function obterDadosAdmin(resource) {
     const { data: { session } } = await client.auth.getSession();
     if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
-    const resposta = await fetch(`/api/admin-content?resource=${encodeURIComponent(resource)}`, {
+    const resposta = await fetch(`${ADMIN_API_ORIGIN}/api/admin-content?resource=${encodeURIComponent(resource)}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
         credentials: 'same-origin'
     });
@@ -31,14 +33,14 @@ async function obterUrlsAssinadasAdmin(referencias) {
     if (!entradas.length) return new Map();
     const { data: { session } } = await client.auth.getSession();
     if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
-    const resposta = await fetch('/api/admin-signed-images', {
+    const resposta = await fetch(`${ADMIN_API_ORIGIN}/api/signed-images`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ paths: entradas })
+        body: JSON.stringify({ paths: entradas, admin: true })
     });
     if (!resposta.ok) throw new Error('Não foi possível assinar as imagens do painel.');
     const payload = await resposta.json();

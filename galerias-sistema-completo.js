@@ -13,6 +13,7 @@
 
 const SUPABASE_URL = "https://tbwmsgztpyyratambgqs.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
+const ADMIN_API_ORIGIN = 'https://motazt-studio.vercel.app';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function obterUrlsAssinadasAdmin(referencias) {
@@ -20,11 +21,11 @@ async function obterUrlsAssinadasAdmin(referencias) {
     if (!entradas.length) return new Map();
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session?.access_token) throw new Error('Sessão administrativa expirada.');
-    const resposta = await fetch('/api/admin-signed-images', {
+    const resposta = await fetch(`${ADMIN_API_ORIGIN}/api/signed-images`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         credentials: 'same-origin',
-        body: JSON.stringify({ paths: entradas })
+        body: JSON.stringify({ paths: entradas, admin: true })
     });
     if (!resposta.ok) throw new Error('Não foi possível assinar as imagens do painel.');
     const payload = await resposta.json();
