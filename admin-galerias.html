@@ -759,6 +759,21 @@
     <!-- Tema final carregado por último para padronizar a página de álbuns -->
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-galerias-site-theme.css?v=20260814-site-theme6">
+    <style>
+        .filtros-galerias-admin { display:flex; align-items:center; gap:10px; margin:0 0 18px; padding:10px; border:1px solid rgba(255,255,255,.1); border-radius:16px; background:rgba(20,20,20,.72); }
+        .filtro-busca-admin { display:flex; align-items:center; gap:9px; flex:1; min-width:220px; padding:0 12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:rgba(255,255,255,.035); }
+        .filtro-busca-admin svg { width:16px; color:var(--ouro-claro,#d2ad78); flex:0 0 auto; }
+        .filtro-busca-admin input, #filtroStatusGalerias { min-height:40px; border:0; outline:0; color:var(--texto,#f5f0e8); background:transparent; font:500 12px var(--fonte-sans,Arial,sans-serif); }
+        .filtro-busca-admin input { width:100%; }
+        .filtro-busca-admin input::placeholder { color:var(--texto-mudo,#999); }
+        #filtroStatusGalerias { padding:0 12px; border:1px solid rgba(255,255,255,.1); border-radius:11px; background:#1b1a18; }
+        #filtroStatusGalerias option { background:#1b1a18; color:#fff; }
+        .btn-filtro-limpar { min-height:40px; padding:0 14px; border:1px solid rgba(255,255,255,.12); border-radius:11px; color:var(--texto-mudo,#aaa); background:transparent; cursor:pointer; }
+        .btn-filtro-limpar:hover { color:#fff; border-color:var(--ouro-claro,#d2ad78); }
+        .contador-filtros-admin { margin-left:auto; padding:0 8px; color:var(--texto-mudo,#aaa); font-size:11px; white-space:nowrap; }
+        .galeria-item[hidden] { display:none !important; }
+        @media (max-width:700px) { .filtros-galerias-admin { align-items:stretch; flex-wrap:wrap; } .filtro-busca-admin { flex-basis:100%; } #filtroStatusGalerias, .btn-filtro-limpar { flex:1; } .contador-filtros-admin { margin-left:0; align-self:center; } }
+    </style>
 </head>
 <body>
     <!-- Cabeçalho com a mesma linguagem visual do Site principal -->
@@ -817,6 +832,21 @@
 
             <!-- ===== ABA 1: LISTAR GALERIAS ===== -->
             <div id="tabListar" class="tab-content ativo">
+                <div class="filtros-galerias-admin" role="search" aria-label="Filtrar álbuns">
+                    <div class="filtro-busca-admin">
+                        <i data-lucide="search"></i>
+                        <input id="filtroGaleriasAdmin" type="search" placeholder="Buscar por cliente, título, telefone ou código..." autocomplete="off">
+                    </div>
+                    <select id="filtroStatusGalerias" aria-label="Filtrar por status">
+                        <option value="todos">Todos os status</option>
+                        <option value="ativa">Ativas</option>
+                        <option value="bloqueada">Bloqueadas</option>
+                        <option value="expirada">Expiradas</option>
+                        <option value="agendado">Agendadas</option>
+                    </select>
+                    <button type="button" class="btn-filtro-limpar" id="limparFiltrosGalerias">Limpar</button>
+                    <span id="contadorFiltrosGalerias" class="contador-filtros-admin" aria-live="polite"></span>
+                </div>
                 <div id="listaVazia" class="listaVazia" style="display:none;">
                     <p>Nenhuma galeria criada ainda</p>
                 </div>
@@ -954,13 +984,14 @@
 
     <!-- Scripts necessários -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="galerias-sistema-completo.js?v=20260816-mobile-upload8"></script>
+    <script src="galerias-sistema-completo.js?v=20260816-admin-productivity9"></script>
 
     <script>
         // Inicializar cliente admin (ajustar conforme sua config)
         const adminSupabaseClient = supabaseClient; // usar o cliente do galerias-sistema-completo.js
 
         let fotosParaEnviar = [];
+        let urlsPreviewUpload = [];
         let historicoAlbumAtual = { acessos: [], downloads: [] };
         let qrAlbumAtual = null;
 
@@ -1073,7 +1104,7 @@
                     const primeiroNome = nomeCliente.split(' ')[0];
 
                     return `
-                        <div class="galeria-item">
+                        <div class="galeria-item" data-search="${escaparHtmlAdmin([gal.titulo || '', primeiroNome, gal.cliente_telefone || gal.telefone || '', codigoCurto, statusVisual].join(' ').toLowerCase())}" data-status="${escaparHtmlAdmin(statusVisual)}">
                             <div class="galeria-header-item">
                                 <div>
                                     <div class="galeria-nome">${gal.titulo || primeiroNome}</div>
@@ -1156,10 +1187,12 @@
 
                             <div class="galeria-actions">
                                 <button class="btn-acao" onclick="copiarCodigoGaleria('${escaparAtributoAdmin(codigoCurto)}', '${gal.id}')"><i data-lucide="copy"></i> Copiar código</button>
+                                <button class="btn-acao" onclick="abrirUploadParaGaleria('${escaparAtributoAdmin(codigoCurto || gal.id)}')"><i data-lucide="upload"></i> Enviar fotos</button>
                                 <button class="btn-acao" onclick="abrirLink('${gal.id}', '${escaparAtributoAdmin(codigoCurto)}')"><i data-lucide="external-link"></i> Ver link</button>
                                 <button class="btn-acao" onclick="abrirQrCode('${gal.id}', '${escaparAtributoAdmin(gal.titulo || primeiroNome)}', '${escaparAtributoAdmin(codigoCurto)}')"><i data-lucide="qr-code"></i> QR Code</button>
                                 <button class="btn-acao" onclick="abrirMensagensAlbum('${gal.id}', '${escaparAtributoAdmin(gal.titulo || primeiroNome)}')"><i data-lucide="messages-square"></i> Mural</button>
                                 <button class="btn-acao" onclick="abrirHistoricoAlbum('${gal.id}', '${escaparAtributoAdmin(gal.titulo || primeiroNome)}')"><i data-lucide="activity"></i> Histórico</button>
+                                <button class="btn-acao" onclick="duplicarGaleriaAdmin('${escaparAtributoAdmin(gal.cliente_nome || gal.nome || '')}', '${escaparAtributoAdmin(gal.cliente_telefone || gal.telefone || '')}', '${escaparAtributoAdmin(gal.titulo || '')}', '${escaparAtributoAdmin(gal.mensagem_agradecimento || '')}')"><i data-lucide="copy-plus"></i> Duplicar estrutura</button>
                                 ${dias >= 0 && dias <= 7 ? `<button class="btn-acao btn-alerta" onclick="avisarExpiracao('${gal.id}', '${escaparAtributoAdmin(primeiroNome)}', '${escaparAtributoAdmin(gal.cliente_telefone || gal.telefone || '')}', '${gal.data_expiracao}', '${escaparAtributoAdmin(codigoCurto)}')"><i data-lucide="clock-alert"></i> Avisar expiração</button>` : ''}
                                 <button class="btn-acao btn-whatsapp" data-compartilhar-id="${gal.id}" data-compartilhar-titulo="${encodeURIComponent(gal.titulo || primeiroNome)}" data-compartilhar-telefone="${encodeURIComponent(gal.cliente_telefone || gal.telefone || '')}" data-compartilhar-codigo="${encodeURIComponent(codigoCurto)}"><i data-lucide="message-circle"></i> WhatsApp</button>
                                 <button class="btn-acao btn-danger" onclick="deletarGaleria('${gal.id}')"><i data-lucide="trash-2"></i> Excluir</button>
@@ -1168,6 +1201,7 @@
                     `;
                 }).join('');
                 window.lucide?.createIcons();
+                aplicarFiltrosGalerias();
                 document.querySelectorAll('[data-compartilhar-id]').forEach(botao => {
                     botao.addEventListener('click', () => {
                         compartilharGaleriaWhatsApp(
@@ -1184,6 +1218,55 @@
 
             } catch (erro) {
                 console.error('Erro ao carregar galerias:', erro);
+            }
+        }
+
+        function aplicarFiltrosGalerias() {
+            const termo = String(document.getElementById('filtroGaleriasAdmin')?.value || '').trim().toLowerCase();
+            const statusFiltro = document.getElementById('filtroStatusGalerias')?.value || 'todos';
+            const cards = Array.from(document.querySelectorAll('#listaGalerias .galeria-item'));
+            let visiveis = 0;
+            cards.forEach(card => {
+                const textoOk = !termo || String(card.dataset.search || '').includes(termo);
+                const status = String(card.dataset.status || '').toLowerCase();
+                const statusOk = statusFiltro === 'todos' || (statusFiltro === 'ativa' && ['ativa', 'publicado'].includes(status)) || status === statusFiltro;
+                const mostrar = textoOk && statusOk;
+                card.hidden = !mostrar;
+                if (mostrar) visiveis++;
+            });
+            const contador = document.getElementById('contadorFiltrosGalerias');
+            if (contador) contador.textContent = cards.length ? `${visiveis} de ${cards.length} álbum(ns)` : '';
+        }
+
+        document.getElementById('filtroGaleriasAdmin')?.addEventListener('input', aplicarFiltrosGalerias);
+        document.getElementById('filtroStatusGalerias')?.addEventListener('change', aplicarFiltrosGalerias);
+        document.getElementById('limparFiltrosGalerias')?.addEventListener('click', () => {
+            document.getElementById('filtroGaleriasAdmin').value = '';
+            document.getElementById('filtroStatusGalerias').value = 'todos';
+            aplicarFiltrosGalerias();
+        });
+
+        function abrirUploadParaGaleria(referencia) {
+            mudarAba('upload', document.querySelectorAll('.tab-btn')[2]);
+            const campo = document.getElementById('uploadGaleriaId');
+            if (campo) {
+                campo.value = referencia || '';
+                campo.focus();
+            }
+            document.getElementById('tabUpload')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function duplicarGaleriaAdmin(nome, telefone, titulo, mensagemAgradecimento) {
+            const confirmar = window.confirm('Criar um novo álbum com os mesmos dados, sem copiar as fotos?');
+            if (!confirmar) return;
+            try {
+                const resultado = await GaleriaPrivada.criarGaleria(nome, telefone, `${titulo || 'Álbum'} — cópia`, { mensagemAgradecimento });
+                const codigo = resultado?.codigo_curto ? ` Código: ${resultado.codigo_curto}` : '';
+                alert(`Estrutura duplicada com sucesso.${codigo}`);
+                carregarGalerias();
+            } catch (erro) {
+                console.error('Erro ao duplicar álbum:', erro);
+                alert(`Não foi possível duplicar o álbum: ${erro?.message || 'tente novamente'}`);
             }
         }
 
@@ -1786,18 +1869,39 @@
             selecionarFotos({ target: { files } });
         });
 
-        function selecionarFotos(event) {
-            fotosParaEnviar = Array.from(event.target.files);
+        function validarArquivoAntesDoUpload(foto) {
+            const limite = 50 * 1024 * 1024;
+            const nome = String(foto?.name || '').toLowerCase();
+            const extensao = nome.split('.').pop();
+            const extensoesAceitas = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'avif'];
+            if (!foto || !foto.size) return 'Arquivo vazio ou inválido.';
+            if (foto.size > limite) return 'Arquivo maior que 50 MB.';
+            if (foto.type && !foto.type.startsWith('image/') && !extensoesAceitas.includes(extensao)) return 'Formato não reconhecido como imagem.';
+            return '';
+        }
 
+        function renderizarPreviewsUpload() {
             const preview = document.getElementById('fotosPreview');
-            preview.innerHTML = fotosParaEnviar.map((foto) => `
+            urlsPreviewUpload.forEach(url => URL.revokeObjectURL(url));
+            urlsPreviewUpload = fotosParaEnviar.map(foto => URL.createObjectURL(foto));
+            preview.innerHTML = fotosParaEnviar.map((foto, idx) => `
                 <div class="preview-foto">
-                    <img src="${URL.createObjectURL(foto)}" alt="">
+                    <img src="${urlsPreviewUpload[idx]}" alt="${escaparHtmlAdmin(foto.name)}" loading="lazy">
                     <div class="preview-status">Pronto</div>
+                    <small title="${escaparHtmlAdmin(foto.name)}">${escaparHtmlAdmin(foto.name)}</small>
                 </div>
             `).join('');
-
             document.getElementById('btnEnviarFotos').disabled = fotosParaEnviar.length === 0;
+        }
+
+        function selecionarFotos(event) {
+            const selecionados = Array.from(event.target.files || []);
+            const invalidos = selecionados.filter(validarArquivoAntesDoUpload);
+            fotosParaEnviar = selecionados.filter(foto => !validarArquivoAntesDoUpload(foto));
+            renderizarPreviewsUpload();
+            if (invalidos.length) {
+                mostrarMensagem(document.getElementById('msgUpload'), `${invalidos.length} arquivo(s) foram ignorados. Verifique formato e limite de 50 MB.`, 'erro');
+            }
         }
 
         async function enviarFotos() {
@@ -1822,10 +1926,13 @@
             let enviadas = 0;
             let erros = 0;
             let primeiroErro = '';
+            const indicesComErro = [];
             const previews = document.querySelectorAll('.preview-foto');
 
             for (const [idx, foto] of fotosParaEnviar.entries()) {
                 try {
+                    const erroDeValidacao = validarArquivoAntesDoUpload(foto);
+                    if (erroDeValidacao) throw new Error(erroDeValidacao);
                     atualizarProgressoAlbum(idx, fotosParaEnviar.length, `Enviando foto ${idx + 1} de ${fotosParaEnviar.length}...`);
                     previews[idx].querySelector('.preview-status').classList.add('enviando');
                     previews[idx].querySelector('.preview-status').textContent = 'Enviando...';
@@ -1842,6 +1949,7 @@
                     previews[idx].querySelector('.preview-status').classList.add('erro');
                     previews[idx].querySelector('.preview-status').textContent = 'Erro';
                     erros++;
+                    indicesComErro.push(idx);
                     if (!primeiroErro) primeiroErro = erro?.message || 'Falha desconhecida no upload.';
                     atualizarProgressoAlbum(idx + 1, fotosParaEnviar.length, `Foto ${idx + 1} de ${fotosParaEnviar.length} com erro`);
                 }
@@ -1852,11 +1960,18 @@
             mostrarMensagem(msg, mensagem, erros === 0 ? 'sucesso' : 'erro');
 
             btn.disabled = false;
-            btn.textContent = 'Enviar Fotos';
-
-            fotosParaEnviar = [];
-            document.getElementById('fotosPreview').innerHTML = '';
-            document.getElementById('inputArquivos').value = '';
+            if (erros > 0) {
+                fotosParaEnviar = indicesComErro.map(indice => fotosParaEnviar[indice]);
+                renderizarPreviewsUpload();
+                btn.textContent = `Tentar novamente (${fotosParaEnviar.length})`;
+            } else {
+                btn.textContent = 'Enviar Fotos';
+                fotosParaEnviar = [];
+                urlsPreviewUpload.forEach(url => URL.revokeObjectURL(url));
+                urlsPreviewUpload = [];
+                document.getElementById('fotosPreview').innerHTML = '';
+                document.getElementById('inputArquivos').value = '';
+            }
 
             setTimeout(() => msg.classList.remove('mostrar'), 6000);
         }
