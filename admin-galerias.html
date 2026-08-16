@@ -954,7 +954,7 @@
 
     <!-- Scripts necessários -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="galerias-sistema-completo.js?v=20260816-mutations5"></script>
+    <script src="galerias-sistema-completo.js?v=20260816-mutations6"></script>
 
     <script>
         // Inicializar cliente admin (ajustar conforme sua config)
@@ -1821,6 +1821,7 @@
 
             let enviadas = 0;
             let erros = 0;
+            let primeiroErro = '';
             const previews = document.querySelectorAll('.preview-foto');
 
             for (const [idx, foto] of fotosParaEnviar.entries()) {
@@ -1841,12 +1842,13 @@
                     previews[idx].querySelector('.preview-status').classList.add('erro');
                     previews[idx].querySelector('.preview-status').textContent = 'Erro';
                     erros++;
+                    if (!primeiroErro) primeiroErro = erro?.message || 'Falha desconhecida no upload.';
                     atualizarProgressoAlbum(idx + 1, fotosParaEnviar.length, `Foto ${idx + 1} de ${fotosParaEnviar.length} com erro`);
                 }
             }
 
             atualizarProgressoAlbum(fotosParaEnviar.length, fotosParaEnviar.length, `${enviadas} de ${fotosParaEnviar.length} foto(s) processada(s)`);
-            const mensagem = `${enviadas} foto(s) enviadas com sucesso!${erros > 0 ? ` ${erros} erro(s).` : ''}`;
+            const mensagem = `${enviadas} foto(s) enviadas com sucesso!${erros > 0 ? ` ${erros} erro(s). Causa: ${primeiroErro}` : ''}`;
             mostrarMensagem(msg, mensagem, erros === 0 ? 'sucesso' : 'erro');
 
             btn.disabled = false;

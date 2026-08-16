@@ -23,6 +23,7 @@ async function chamarMutacaoAdmin(payload) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         credentials: 'include',
+        cache: 'no-store',
         body: JSON.stringify(payload)
     });
     const dados = await resposta.json().catch(() => null);
@@ -407,9 +408,19 @@ async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
     const base = `${galeriaId}/${timestamp}-${Math.random().toString(36).slice(2, 8)}`;
     const extensaoOriginal = (arquivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
     const caminhoOriginal = `${base}/original.${extensaoOriginal}`;
-    const caminhoPreview = `${base}/preview.webp`;
+    let preview;
+    let extensaoPreview = 'webp';
     try {
-        const preview = await criarArquivoPreview(arquivo);
+        try {
+            preview = await criarArquivoPreview(arquivo);
+        } catch (previewError) {
+            // Alguns celulares fornecem HEIC/HEIF ou imagens que o navegador não decodifica.
+            // O original ainda pode ser enviado com segurança; nesse caso ele é usado como preview.
+            console.warn('Preview reduzido indisponível; usando o original:', previewError?.message || previewError);
+            preview = arquivo;
+            extensaoPreview = extensaoOriginal;
+        }
+        const caminhoPreview = `${base}/preview.${extensaoPreview}`;
         const [uploadOriginal, uploadPreview] = await Promise.all([
             chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoOriginal }),
             chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoPreview })
