@@ -2,6 +2,21 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/js/sw.js",
+      "headers": [{ "key": "Service-Worker-Allowed", "value": "/" }]
+    }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/html/index.html" },
+    { "source": "/index", "destination": "/html/index.html" },
+    { "source": "/admin-galerias", "destination": "/html/admin-galerias.html" },
+    { "source": "/relatorio", "destination": "/html/relatorio.html" },
+    { "source": "/diagnostico-album", "destination": "/html/diagnostico-album.html" },
+    { "source": "/album", "destination": "/html/album.html" },
+    { "source": "/galeria-privada", "destination": "/html/album.html" }
+  ],
   "crons": [
     {
       "path": "/api/telegram-relatorio",
