@@ -366,8 +366,8 @@ async function carregarImagemParaPreview(arquivo) {
 
 async function criarArquivoPreview(arquivo) {
     const imagem = await carregarImagemParaPreview(arquivo);
-    const maxLado = 1600;
-    const qualidade = 0.72;
+    const maxLado = 2560;
+    const qualidade = 0.90;
     const maiorLado = Math.max(imagem.naturalWidth, imagem.naturalHeight);
     const escala = Math.min(1, maxLado / maiorLado);
     const largura = Math.max(1, Math.round(imagem.naturalWidth * escala));
