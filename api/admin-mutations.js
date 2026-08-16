@@ -148,7 +148,7 @@ async function finalizePhoto(req, res, base, key, body) {
   const photoResponse = await supabaseFetch(base, key, '/rest/v1/fotos?select=id,galeria_id,arquivo_preview,arquivo_full,posicao', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
-    body: JSON.stringify({ galeria_id: galeriaId, arquivo_preview: previewPath, arquivo_full: originalPath, posicao: count + 1 })
+    body: JSON.stringify({ galeria_id: galeriaId, arquivo_preview: previewPath, arquivo_full: originalPath, arquivo_original: originalPath, posicao: count + 1 })
   });
   const photoData = await photoResponse.json().catch(() => null);
   if (!photoResponse.ok || !Array.isArray(photoData) || !photoData[0]?.id) {
