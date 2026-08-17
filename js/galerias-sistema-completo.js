@@ -15,20 +15,42 @@ const SUPABASE_URL = "https://tbwmsgztpyyratambgqs.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_yqH30kXsSD7nmwdlgPj93Q_pw1QrcQd";
 const ADMIN_API_ORIGIN = 'https://motazt-studio.vercel.app';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const resolucoesGaleriaCache = new Map();
 
-async function chamarMutacaoAdmin(payload) {
+async function chamarMutacaoAdmin(payload, tentativa = 0) {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session?.access_token) throw new Error('Sessão administrativa expirada. Faça login novamente.');
-    const resposta = await fetch(`${ADMIN_API_ORIGIN}/api/admin-mutations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        credentials: 'include',
-        cache: 'no-store',
-        body: JSON.stringify(payload)
-    });
-    const dados = await resposta.json().catch(() => null);
-    if (!resposta.ok) throw new Error(dados?.error || 'A operação administrativa falhou.');
-    return dados;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    try {
+        const resposta = await fetch(`${ADMIN_API_ORIGIN}/api/admin-mutations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+            credentials: 'include',
+            cache: 'no-store',
+            body: JSON.stringify(payload),
+            signal: controller.signal
+        });
+        const dados = await resposta.json().catch(() => null);
+        const transitivo = resposta.status === 408 || resposta.status === 425 || resposta.status === 429 || resposta.status >= 500;
+        if (!resposta.ok) {
+            if (tentativa < 2 && transitivo) {
+                await new Promise(resolve => setTimeout(resolve, 900 * (tentativa + 1)));
+                return chamarMutacaoAdmin(payload, tentativa + 1);
+            }
+            throw new Error(dados?.error || `A operação administrativa falhou (${resposta.status}).`);
+        }
+        return dados;
+    } catch (erro) {
+        if (tentativa < 2 && (erro?.name === 'AbortError' || !erro?.status)) {
+            await new Promise(resolve => setTimeout(resolve, 900 * (tentativa + 1)));
+            return chamarMutacaoAdmin(payload, tentativa + 1);
+        }
+        if (erro?.name === 'AbortError') throw new Error('O servidor demorou para responder. Verifique a conexão e tente novamente.');
+        throw erro;
+    } finally {
+        clearTimeout(timeout);
+    }
 }
 
 async function obterUrlsAssinadasAdmin(referencias) {
@@ -366,8 +388,8 @@ async function carregarImagemParaPreview(arquivo) {
 
 async function criarArquivoPreview(arquivo) {
     const imagem = await carregarImagemParaPreview(arquivo);
-    const maxLado = 2560;
-    const qualidade = 0.90;
+    const maxLado = 1920;
+    const qualidade = 0.84;
     const maiorLado = Math.max(imagem.naturalWidth, imagem.naturalHeight);
     const escala = Math.min(1, maxLado / maiorLado);
     const largura = Math.max(1, Math.round(imagem.naturalWidth * escala));
@@ -402,12 +424,20 @@ async function enviarParaUrlAssinada(upload, arquivo, tentativa = 0) {
             method: 'PUT',
             headers: { 'Content-Type': arquivo.type || 'application/octet-stream' },
             body: arquivo,
-            signal: controller.signal
+            signal: controller.signal,
+            cache: 'no-store'
         });
-        if (!resposta.ok) throw new Error(`Falha no upload seguro (${resposta.status}).`);
+        if (!resposta.ok) {
+            const status = resposta.status;
+            const erro = new Error(`Falha no upload seguro (${status}).`);
+            erro.status = status;
+            throw erro;
+        }
     } catch (erro) {
-        if (tentativa < 1 && (erro?.name === 'AbortError' || !erro?.message?.includes('(4'))) {
-            await new Promise(resolve => setTimeout(resolve, 1200));
+        const status = Number(erro?.status || 0);
+        const transitivo = erro?.name === 'AbortError' || !status || status === 408 || status === 425 || status === 429 || status >= 500;
+        if (tentativa < 2 && transitivo) {
+            await new Promise(resolve => setTimeout(resolve, 1200 * (tentativa + 1)));
             return enviarParaUrlAssinada(upload, arquivo, tentativa + 1);
         }
         if (erro?.name === 'AbortError') throw new Error('O upload demorou mais de 3 minutos. Verifique a conexão e tente novamente.');
@@ -418,8 +448,14 @@ async function enviarParaUrlAssinada(upload, arquivo, tentativa = 0) {
 }
 
 async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
-    const resolvida = await chamarMutacaoAdmin({ action: 'resolve-gallery', reference: galeriaId });
-    galeriaId = resolvida.galeria_id;
+    const referenciaOriginal = String(galeriaId || '').trim();
+    let idResolvido = resolucoesGaleriaCache.get(referenciaOriginal);
+    if (!idResolvido) {
+        const resolvida = await chamarMutacaoAdmin({ action: 'resolve-gallery', reference: referenciaOriginal });
+        idResolvido = resolvida.galeria_id;
+        resolucoesGaleriaCache.set(referenciaOriginal, idResolvido);
+    }
+    galeriaId = idResolvido;
     const timestamp = Date.now();
     const base = `${galeriaId}/${timestamp}-${Math.random().toString(36).slice(2, 8)}`;
     const extensaoOriginal = (arquivo.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
@@ -437,13 +473,13 @@ async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
             extensaoPreview = extensaoOriginal;
         }
         const caminhoPreview = `${base}/preview.${extensaoPreview}`;
-        const [uploadOriginal, uploadPreview] = await Promise.all([
-            chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoOriginal }),
-            chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoPreview })
-        ]);
+        const uploadOriginal = await chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoOriginal });
+        await new Promise(resolve => setTimeout(resolve, 150));
+        const uploadPreview = await chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoPreview });
         // No celular, enviar os dois arquivos em paralelo pode deixar uma conexão presa.
         // O envio sequencial reduz falhas intermitentes e mantém o progresso determinístico.
         await enviarParaUrlAssinada(uploadOriginal, arquivo);
+        await new Promise(resolve => setTimeout(resolve, 150));
         await enviarParaUrlAssinada(uploadPreview, preview);
         const resposta = await chamarMutacaoAdmin({
             action: 'finalize-photo',
