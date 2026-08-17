@@ -933,7 +933,12 @@
                     <p><strong>Clique para selecionar</strong> ou arraste fotos aqui</p>
                 </div>
 
-                <input type="file" id="inputArquivos" multiple accept="image/*"
+                <button class="btn-acao btn-importar-lightroom" type="button" onclick="abrirSeletorLightroom()">
+                    <i data-lucide="download"></i> Importar do Lightroom
+                </button>
+                <p class="upload-import-help">No Android, o botão abre o seletor de arquivos. Escolha as fotos exportadas pelo Lightroom em alta resolução.</p>
+
+                <input type="file" id="inputArquivos" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif"
                        onchange="selecionarFotos(event)" style="display:none;">
 
                 <div id="fotosPreview" class="fotosPreview"></div>
@@ -2146,6 +2151,13 @@
                 </div>
             `).join('');
             document.getElementById('btnEnviarFotos').disabled = fotosParaEnviar.length === 0;
+        }
+
+        function abrirSeletorLightroom() {
+            const input = document.getElementById('inputArquivos');
+            if (!input) return;
+            input.value = '';
+            input.click();
         }
 
         function selecionarFotos(event) {

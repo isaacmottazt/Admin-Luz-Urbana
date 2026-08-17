@@ -342,6 +342,8 @@ button, input, select { font-family: var(--body); }
 #uploadArea:hover, #uploadArea.arrastando { color: var(--text); background: var(--steel-dim) !important; border-color: var(--steel) !important; }
 #uploadArea p { font-family: var(--sans); letter-spacing: .03em; }
 .upload-icon { color: var(--steel); }
+.btn-importar-lightroom { margin: 0 auto 8px; display: flex !important; width: fit-content; justify-content: center; }
+.upload-import-help { margin: 0 auto 18px; max-width: 620px; color: var(--text-dim); font-family: var(--sans); font-size: .74rem; line-height: 1.5; text-align: center; }
 .preview-foto { border-color: var(--panel-line) !important; border-radius: 2px !important; }
 .preview-status { color: var(--text-dim); background: rgba(5,5,5,.85); }
 
