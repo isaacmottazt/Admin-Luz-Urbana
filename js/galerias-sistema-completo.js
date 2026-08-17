@@ -286,26 +286,22 @@ async function registrarDownloadAlbum(galeriaId, fotoId = null, tipoDownload = '
     }
 }
 
+async function obterHistoricoAdmin(galeriaId, limite = 100) {
+    const dados = await chamarMutacaoAdmin({ action: 'list-history', galeriaId, limit: limite });
+    return {
+        acessos: Array.isArray(dados?.acessos) ? dados.acessos : [],
+        downloads: Array.isArray(dados?.downloads) ? dados.downloads : []
+    };
+}
+
 async function listarHistoricoAcessosAdmin(galeriaId, limite = 100) {
-    const { data, error } = await supabaseClient
-        .from('album_acessos')
-        .select('id, galeria_id, codigo_utilizado, data_acesso, user_agent, referrer, origem')
-        .eq('galeria_id', galeriaId)
-        .order('data_acesso', { ascending: false })
-        .limit(limite);
-    if (error) throw error;
-    return data || [];
+    const historico = await obterHistoricoAdmin(galeriaId, limite);
+    return historico.acessos;
 }
 
 async function listarHistoricoDownloadsAdmin(galeriaId, limite = 100) {
-    const { data, error } = await supabaseClient
-        .from('album_downloads')
-        .select('id, galeria_id, foto_id, tipo_download, data_download, user_agent, origem')
-        .eq('galeria_id', galeriaId)
-        .order('data_download', { ascending: false })
-        .limit(limite);
-    if (error) throw error;
-    return data || [];
+    const historico = await obterHistoricoAdmin(galeriaId, limite);
+    return historico.downloads;
 }
 
 // ===== 2. VALIDAR SE A GALERIA EXISTE E ESTÁ ATIVA =====
@@ -388,8 +384,9 @@ async function carregarImagemParaPreview(arquivo) {
 
 async function criarArquivoPreview(arquivo) {
     const imagem = await carregarImagemParaPreview(arquivo);
-    const maxLado = 1920;
-    const qualidade = 0.84;
+    // O original segue intacto; o preview é apenas para a galeria e deve ser leve em lotes grandes.
+    const maxLado = 1440;
+    const qualidade = 0.78;
     const maiorLado = Math.max(imagem.naturalWidth, imagem.naturalHeight);
     const escala = Math.min(1, maxLado / maiorLado);
     const largura = Math.max(1, Math.round(imagem.naturalWidth * escala));
@@ -405,7 +402,12 @@ async function criarArquivoPreview(arquivo) {
     if (!blob) throw new Error('Não foi possível criar o preview reduzido.');
 
     const extensao = blob.type === 'image/webp' ? 'webp' : 'jpg';
-    return new File([blob], `preview-${Date.now()}.${extensao}`, { type: blob.type });
+    const resultado = new File([blob], `preview-${Date.now()}.${extensao}`, { type: blob.type });
+    // Libera buffers nativos antes de a próxima foto entrar no ciclo.
+    canvas.width = 1;
+    canvas.height = 1;
+    imagem.src = '';
+    return resultado;
 }
 
 function obterUrlPublicaStorage(caminho) {
@@ -474,12 +476,12 @@ async function uploadFoto(galeriaId, arquivo, temMarcaDagua = true) {
         }
         const caminhoPreview = `${base}/preview.${extensaoPreview}`;
         const uploadOriginal = await chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoOriginal });
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 60));
         const uploadPreview = await chamarMutacaoAdmin({ action: 'prepare-upload', path: caminhoPreview });
         // No celular, enviar os dois arquivos em paralelo pode deixar uma conexão presa.
         // O envio sequencial reduz falhas intermitentes e mantém o progresso determinístico.
         await enviarParaUrlAssinada(uploadOriginal, arquivo);
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 60));
         await enviarParaUrlAssinada(uploadPreview, preview);
         const resposta = await chamarMutacaoAdmin({
             action: 'finalize-photo',
@@ -827,6 +829,7 @@ window.GaleriaPrivada = {
     avaliarEstadoGaleria,
     registrarAcessoAlbum,
     registrarDownloadAlbum,
+    obterHistoricoAdmin,
     listarHistoricoAcessosAdmin,
     listarHistoricoDownloadsAdmin,
     deletarFoto,

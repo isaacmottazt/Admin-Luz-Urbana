@@ -148,6 +148,22 @@ async function prepareUpload(req, res, base, key, body) {
   return json(res, 200, { path, token, signedUrl });
 }
 
+async function listHistory(req, res, base, key, body) {
+  const galeriaId = clean(body?.galeriaId, 80);
+  const limite = Math.min(Math.max(Number(body?.limit) || 100, 1), 500);
+  if (!galeriaId) return json(res, 400, { error: 'ID do álbum inválido.' });
+  const query = `galeria_id=eq.${encodeURIComponent(galeriaId)}&order=data_acesso.desc&limit=${limite}`;
+  const accessResponse = await supabaseFetch(base, key, `/rest/v1/album_acessos?select=id,galeria_id,codigo_utilizado,data_acesso,user_agent,referrer,origem&${query}`);
+  const acessos = await accessResponse.json().catch(() => []);
+  const downloadResponse = await supabaseFetch(base, key, `/rest/v1/album_downloads?select=id,galeria_id,foto_id,tipo_download,data_download,user_agent,origem&galeria_id=eq.${encodeURIComponent(galeriaId)}&order=data_download.desc&limit=${limite}`);
+  const downloads = await downloadResponse.json().catch(() => []);
+  if (!accessResponse.ok || !downloadResponse.ok) {
+    console.error('History query failed:', accessResponse.status, downloadResponse.status, acessos, downloads);
+    return json(res, 502, { error: 'Não foi possível consultar o histórico do álbum.' });
+  }
+  return json(res, 200, { acessos: Array.isArray(acessos) ? acessos : [], downloads: Array.isArray(downloads) ? downloads : [] });
+}
+
 async function deleteGallery(req, res, base, key, body) {
   const galeriaId = clean(body?.galeriaId, 80);
   if (!galeriaId) return json(res, 400, { error: 'ID do álbum inválido.' });
@@ -234,6 +250,7 @@ module.exports = async function adminMutations(req, res) {
     if (body.action === 'prepare-upload') return await prepareUpload(req, res, supabaseUrl, serviceRoleKey, body);
     if (body.action === 'reorder-photos') return await reorderPhotos(req, res, supabaseUrl, serviceRoleKey, body);
     if (body.action === 'finalize-photo') return await finalizePhoto(req, res, supabaseUrl, serviceRoleKey, body);
+    if (body.action === 'list-history') return await listHistory(req, res, supabaseUrl, serviceRoleKey, body);
     if (body.action === 'delete-gallery') return await deleteGallery(req, res, supabaseUrl, serviceRoleKey, body);
     return json(res, 400, { error: 'Operação administrativa inválida.' });
   } catch (error) {

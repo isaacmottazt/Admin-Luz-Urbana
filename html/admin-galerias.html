@@ -1026,6 +1026,7 @@
 
         let fotosParaEnviar = [];
         let urlsPreviewUpload = [];
+        let idsFilaUpload = [];
         let historicoAlbumAtual = { acessos: [], downloads: [] };
         let qrAlbumAtual = null;
 
@@ -1726,10 +1727,25 @@
                 alert('Não foi possível gerar o cartão QR Code agora.');
                 return;
             }
-            const link = document.createElement('a');
-            link.download = `motazt-album-${(qrAlbumAtual.codigoCurto || qrAlbumAtual.id).slice(0, 12)}.png`;
-            link.href = cartao.toDataURL('image/png');
-            link.click();
+            const nomeArquivo = `motazt-album-${(qrAlbumAtual.codigoCurto || qrAlbumAtual.id).slice(0, 12)}.png`;
+            cartao.toBlob((blob) => {
+                if (!blob) {
+                    alert('Não foi possível preparar o arquivo QR Code.');
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = nomeArquivo;
+                link.rel = 'noopener';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    link.remove();
+                    URL.revokeObjectURL(url);
+                }, 1500);
+            }, 'image/png');
         }
 
         async function copiarLinkQr() {
@@ -1852,10 +1868,9 @@
             document.getElementById('historicoLista').innerHTML = '<div class="historico-vazio">Carregando histórico...</div>';
             modal.classList.add('ativo');
             try {
-                const [acessos, downloads] = await Promise.all([
-                    GaleriaPrivada.listarHistoricoAcessosAdmin(id),
-                    GaleriaPrivada.listarHistoricoDownloadsAdmin(id)
-                ]);
+                const historico = await GaleriaPrivada.obterHistoricoAdmin(id, 200);
+                const acessos = historico.acessos || [];
+                const downloads = historico.downloads || [];
                 historicoAlbumAtual = { acessos, downloads };
                 document.getElementById('historicoTotalAcessos').textContent = acessos.length;
                 document.getElementById('historicoTotalDownloads').textContent = downloads.length;
@@ -2046,9 +2061,9 @@
                 const db = await abrirFilaUploadDB();
                 const tx = db.transaction(UPLOAD_QUEUE_STORE, 'readwrite');
                 const store = tx.objectStore(UPLOAD_QUEUE_STORE);
-                store.clear();
+                idsFilaUpload = arquivos.map((file, index) => `${galeriaId}-${file.name}-${file.size}-${file.lastModified}-${index}`);
                 arquivos.forEach((file, index) => store.put({
-                    id: `${galeriaId}-${file.name}-${file.size}-${file.lastModified}-${index}`,
+                    id: idsFilaUpload[index],
                     galeriaId, name: file.name, size: file.size, type: file.type, lastModified: file.lastModified, file
                 }));
                 await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
@@ -2057,16 +2072,16 @@
             } catch (erro) { console.warn('Fila persistente indisponível:', erro); }
         }
 
-        async function removerArquivoDaFilaUpload(galeriaId, arquivo) {
+        async function removerArquivoDaFilaUpload(galeriaId, arquivo, filaId = null) {
             try {
                 const db = await abrirFilaUploadDB();
                 const tx = db.transaction(UPLOAD_QUEUE_STORE, 'readwrite');
                 const store = tx.objectStore(UPLOAD_QUEUE_STORE);
-                const itens = await new Promise((resolve, reject) => { const req = store.getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error); });
-                const alvo = itens.find(item => item.galeriaId === galeriaId && item.name === arquivo.name && item.size === arquivo.size && item.lastModified === arquivo.lastModified);
-                if (alvo) store.delete(alvo.id);
+                const alvoId = filaId || `${galeriaId}-${arquivo.name}-${arquivo.size}-${arquivo.lastModified}`;
+                store.delete(alvoId);
                 await new Promise(resolve => { tx.oncomplete = resolve; tx.onerror = resolve; });
-                const restantes = itens.filter(item => item !== alvo).length;
+                const anteriores = Number(localStorage.getItem('motazt_upload_queue_count') || 0);
+                const restantes = Math.max(0, anteriores - 1);
                 localStorage.setItem('motazt_upload_queue_count', String(restantes));
                 atualizarDashboardFila(restantes);
             } catch (erro) { console.warn('Não foi possível atualizar a fila:', erro); }
@@ -2099,6 +2114,7 @@
                 if (!itens.length) return;
                 const primeiro = itens[0];
                 document.getElementById('uploadGaleriaId').value = primeiro.galeriaId || '';
+                idsFilaUpload = itens.map(item => item.id);
                 fotosParaEnviar = itens.map(item => item.file).filter(Boolean);
                 renderizarPreviewsUpload();
                 atualizarDashboardFila(fotosParaEnviar.length);
@@ -2119,11 +2135,12 @@
 
         function renderizarPreviewsUpload() {
             const preview = document.getElementById('fotosPreview');
-            urlsPreviewUpload.forEach(url => URL.revokeObjectURL(url));
-            urlsPreviewUpload = fotosParaEnviar.map(foto => URL.createObjectURL(foto));
+            urlsPreviewUpload.forEach(url => url && URL.revokeObjectURL(url));
+            const limitePreviews = 32;
+            urlsPreviewUpload = fotosParaEnviar.map((foto, idx) => idx < limitePreviews ? URL.createObjectURL(foto) : '');
             preview.innerHTML = fotosParaEnviar.map((foto, idx) => `
-                <div class="preview-foto">
-                    <img src="${urlsPreviewUpload[idx]}" alt="${escaparHtmlAdmin(foto.name)}" loading="lazy">
+                <div class="preview-foto" data-upload-index="${idx}">
+                    ${urlsPreviewUpload[idx] ? `<img src="${urlsPreviewUpload[idx]}" alt="${escaparHtmlAdmin(foto.name)}" loading="lazy" decoding="async">` : '<div class="preview-placeholder">Prévia sob demanda</div>'}
                     <div class="preview-status">Pronto</div>
                     <small title="${escaparHtmlAdmin(foto.name)}">${escaparHtmlAdmin(foto.name)}</small>
                 </div>
@@ -2169,6 +2186,7 @@
 
             for (const [idx, foto] of fotosParaEnviar.entries()) {
                 try {
+                    if (idx > 0 && idx % 4 === 0) await new Promise(resolve => requestAnimationFrame(() => resolve()));
                     const erroDeValidacao = validarArquivoAntesDoUpload(foto);
                     if (erroDeValidacao) throw new Error(erroDeValidacao);
                     atualizarProgressoAlbum(idx, fotosParaEnviar.length, `Enviando foto ${idx + 1} de ${fotosParaEnviar.length}...`);
@@ -2180,7 +2198,7 @@
                     previews[idx].querySelector('.preview-status').classList.remove('enviando');
                     previews[idx].querySelector('.preview-status').textContent = 'Pronto!';
                     enviadas++;
-                    await removerArquivoDaFilaUpload(galeriaId, foto);
+                    await removerArquivoDaFilaUpload(galeriaId, foto, idsFilaUpload[idx]);
                     atualizarProgressoAlbum(idx + 1, fotosParaEnviar.length, `Foto ${idx + 1} de ${fotosParaEnviar.length} concluída`);
 
                 } catch (erro) {
@@ -2207,7 +2225,8 @@
                 btn.textContent = 'Enviar Fotos';
                 await limparFilaUpload(galeriaId);
                 fotosParaEnviar = [];
-                urlsPreviewUpload.forEach(url => URL.revokeObjectURL(url));
+                idsFilaUpload = [];
+                urlsPreviewUpload.forEach(url => url && URL.revokeObjectURL(url));
                 urlsPreviewUpload = [];
                 document.getElementById('fotosPreview').innerHTML = '';
                 document.getElementById('inputArquivos').value = '';
