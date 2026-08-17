@@ -1717,27 +1717,62 @@
 
         async function criarCartaoQrPng() {
             const cartao = document.getElementById('qrCardVisual');
-            if (!cartao || typeof html2canvas !== 'function') return null;
-            return html2canvas(cartao, {
-                backgroundColor: '#090a0b',
-                scale: 2,
-                useCORS: true,
-                logging: false
-            });
+            if (!cartao) return null;
+            if (typeof html2canvas === 'function') {
+                try {
+                    return await html2canvas(cartao, {
+                        backgroundColor: '#090a0b',
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        imageTimeout: 5000
+                    });
+                } catch (erro) {
+                    console.warn('Cartão completo indisponível; usando QR direto:', erro);
+                }
+            }
+            return document.querySelector('#qrCodeCanvas canvas, #qrCodeCanvas img');
+        }
+
+        function enviarQrParaAndroid(blob, nomeArquivo) {
+            if (!window.ReactNativeWebView || !blob) return false;
+            const leitor = new FileReader();
+            leitor.onloadend = () => window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'download-data-url',
+                url: leitor.result,
+                filename: nomeArquivo
+            }));
+            leitor.onerror = () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'download-error', filename: nomeArquivo }));
+            leitor.readAsDataURL(blob);
+            return true;
         }
 
         async function baixarQrCode() {
-            const cartao = await criarCartaoQrPng();
-            if (!cartao || !qrAlbumAtual) {
-                alert('Não foi possível gerar o cartão QR Code agora.');
-                return;
-            }
-            const nomeArquivo = `motazt-album-${(qrAlbumAtual.codigoCurto || qrAlbumAtual.id).slice(0, 12)}.png`;
-            cartao.toBlob((blob) => {
-                if (!blob) {
-                    alert('Não foi possível preparar o arquivo QR Code.');
-                    return;
-                }
+            const botao = document.getElementById('btnBaixarQrCode');
+            const textoOriginal = botao?.innerHTML || '';
+            if (botao) { botao.disabled = true; botao.textContent = 'Preparando PNG...'; }
+            try {
+                const cartao = await criarCartaoQrPng();
+                if (!cartao || !qrAlbumAtual) throw new Error('QR Code indisponível.');
+                const nomeArquivo = `motazt-album-${(qrAlbumAtual.codigoCurto || qrAlbumAtual.id).slice(0, 12)}.png`;
+                const blob = await new Promise((resolve, reject) => {
+                    if (!cartao.toBlob) {
+                        const imagem = new Image();
+                        imagem.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = imagem.naturalWidth || 512;
+                            canvas.height = imagem.naturalHeight || 512;
+                            canvas.getContext('2d').drawImage(imagem, 0, 0);
+                            canvas.toBlob(resolve, 'image/png');
+                        };
+                        imagem.onerror = reject;
+                        imagem.src = cartao.src;
+                        return;
+                    }
+                    cartao.toBlob(resolve, 'image/png');
+                });
+                if (!blob) throw new Error('Não foi possível preparar o arquivo.');
+                if (enviarQrParaAndroid(blob, nomeArquivo)) return;
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -1746,11 +1781,13 @@
                 link.style.display = 'none';
                 document.body.appendChild(link);
                 link.click();
-                setTimeout(() => {
-                    link.remove();
-                    URL.revokeObjectURL(url);
-                }, 1500);
-            }, 'image/png');
+                setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 3000);
+            } catch (erro) {
+                console.error('Erro ao baixar QR Code:', erro);
+                alert('Não foi possível gerar o cartão QR Code agora. Tente novamente.');
+            } finally {
+                if (botao) { botao.disabled = false; botao.innerHTML = textoOriginal; window.lucide?.createIcons(); }
+            }
         }
 
         async function copiarLinkQr() {
